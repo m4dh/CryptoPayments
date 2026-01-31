@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Copy, Check, ExternalLink, Zap, Shield, Globe, Code } from "lucide-react";
 import { useState } from "react";
+import futureAndCodeLogo from "@/assets/futureandcode_czarne_x100.svg";
 
 export default function Home() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -276,7 +277,21 @@ app.post('/webhooks', verifier.expressMiddleware());`;
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <p>Crypto Payment Service - Microservice for USDT/USDC payments</p>
-            <p>Built with Alchemy SDK for reliable blockchain monitoring</p>
+            <a 
+              href="https://futureandcode.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              data-testid="link-futureandcode"
+            >
+              <img 
+                src={futureAndCodeLogo} 
+                alt="Future and Code" 
+                className="h-6"
+                data-testid="img-futureandcode-logo"
+              />
+              <span>futureandcode.com</span>
+            </a>
           </div>
         </div>
       </footer>
