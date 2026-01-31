@@ -1,69 +1,182 @@
-# Crypto Payment Microservice
+# Crypto Payment Library
 
-A standalone cryptocurrency payment microservice supporting USDT/USDC payments on Arbitrum, Ethereum, and Tron networks. Designed as an independent REST API with TypeScript SDK for easy integration.
+A native cryptocurrency payment library for USDT/USDC payments on Arbitrum, Ethereum, and Tron networks. Designed for direct integration into your application without external API calls or authentication.
 
 ## Features
 
 - **Multi-Network Support**: Arbitrum (recommended), Ethereum, and Tron
 - **Stablecoin Payments**: USDT and USDC on all supported networks
-- **Multi-Tenant Architecture**: API key authentication with isolated tenant data
+- **Native Library**: Import and use directly - no API keys required
 - **Blockchain Monitoring**: Real-time payment detection via Alchemy SDK (EVM) and TronGrid (Tron)
-- **Webhook Notifications**: Secure HMAC-signed webhooks with automatic retries
-- **TypeScript SDK**: Full-featured client library with type definitions
+- **Webhook Notifications**: Optional HMAC-signed webhooks with automatic retries
 - **Encrypted Storage**: AES-256-GCM encryption for sensitive address data
+- **Demo UI**: Built-in payment flow for testing
 
 ## Supported Networks
 
 | Network | Tokens | Est. Fee | Confirmation Time | Recommended |
 |---------|--------|----------|-------------------|-------------|
-| Arbitrum | USDT, USDC | ~$0.01 | ~1 minute | ✅ |
+| Arbitrum | USDT, USDC | ~$0.01 | ~1 minute | Yes |
 | Ethereum | USDT, USDC | ~$2-5 | ~5 minutes | |
 | Tron | USDT, USDC | ~$0.50 | ~3 minutes | |
 
 ## Quick Start
 
-### 1. Create a Tenant
+### 1. Configure Environment Variables
 
 ```bash
-curl -X POST https://your-service.app/api/tenants \
-  -H "Content-Type: application/json" \
-  -d '{"name": "My App"}'
+DATABASE_URL=postgresql://...
+SESSION_SECRET=your-secret-key
+ALCHEMY_API_KEY=your-alchemy-key
+PAYMENT_ADDRESS_EVM=0x...
+PAYMENT_ADDRESS_TRON=T...
 ```
 
-Response:
-```json
-{
-  "tenant": {"id": "...", "name": "My App"},
-  "apiKey": "your-api-key",
-  "webhookSecret": "your-webhook-secret",
-  "message": "Store your API key securely - it will not be shown again"
-}
+### 2. Import and Configure
+
+```typescript
+import { cryptoPayments } from './lib/cryptoPayments';
+
+// Optional: Override payment addresses
+cryptoPayments.configure({
+  paymentAddressEvm: '0x...',
+  paymentAddressTron: 'T...',
+});
 ```
 
-### 2. Create a Plan
+### 3. Create a Plan
+
+```typescript
+await cryptoPayments.createPlan({
+  planKey: 'pro-monthly',
+  name: 'Pro Monthly',
+  price: '19.99',
+  currency: 'USDC',
+  periodDays: 30,
+  features: ['All features', 'Priority support'],
+});
+```
+
+### 4. Initiate a Payment
+
+```typescript
+const payment = await cryptoPayments.initiatePayment({
+  userId: 'user-123',
+  planId: 'plan-uuid',
+  network: 'arbitrum',
+  token: 'USDC',
+  senderAddress: '0x...',
+});
+
+console.log('Send payment to:', payment.receiverAddress);
+console.log('Amount:', payment.amount, payment.token);
+console.log('Expires in:', payment.expiresIn, 'seconds');
+```
+
+### 5. Confirm Payment Sent
+
+```typescript
+// After user sends transaction
+await cryptoPayments.confirmPaymentSent(payment.paymentId);
+```
+
+### 6. Check Payment Status
+
+```typescript
+const status = await cryptoPayments.getPaymentStatus(payment.paymentId);
+console.log('Status:', status.status); // pending, awaiting_confirmation, confirmed, expired
+```
+
+## Library API
+
+### Configuration
+
+```typescript
+cryptoPayments.configure({
+  paymentAddressEvm?: string,    // EVM receiving address
+  paymentAddressTron?: string,   // Tron receiving address
+  webhookUrl?: string,           // Webhook notification URL
+  webhookSecret?: string,        // Webhook HMAC secret
+});
+```
+
+### Plans
+
+```typescript
+// Get all plans
+const plans = await cryptoPayments.getPlans();
+
+// Create a plan
+await cryptoPayments.createPlan({
+  planKey: string,
+  name: string,
+  description?: string,
+  price: string,
+  currency?: 'USDT' | 'USDC',
+  periodDays?: number,
+  features?: string[],
+});
+```
+
+### Networks
+
+```typescript
+// Get supported networks
+const networks = cryptoPayments.getNetworks();
+
+// Get specific network info
+const arbitrum = cryptoPayments.getNetwork('arbitrum');
+```
+
+### Payments
+
+```typescript
+// Initiate payment
+const payment = await cryptoPayments.initiatePayment({
+  userId: string,
+  planId: string,
+  network: 'arbitrum' | 'ethereum' | 'tron',
+  token: 'USDT' | 'USDC',
+  senderAddress: string,
+});
+
+// Confirm payment sent
+await cryptoPayments.confirmPaymentSent(paymentId);
+
+// Get payment status
+const status = await cryptoPayments.getPaymentStatus(paymentId);
+```
+
+### Subscriptions
+
+```typescript
+// Get current user subscription
+const subscription = await cryptoPayments.getCurrentSubscription(userId);
+
+// Get subscription history
+const history = await cryptoPayments.getSubscriptionHistory(userId);
+```
+
+## REST API Endpoints
+
+For applications that prefer REST API integration:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/plans` | List available plans |
+| GET | `/api/networks` | Get supported networks |
+| POST | `/api/payments` | Initiate new payment |
+| POST | `/api/payments/:id/confirm` | Confirm payment sent |
+| GET | `/api/payments/:id/status` | Get payment status |
+| GET | `/api/health` | Health check |
+
+### Example: Initiate Payment via REST
 
 ```bash
-curl -X POST https://your-service.app/api/plans \
-  -H "Authorization: Bearer your-api-key" \
+curl -X POST http://localhost:5000/api/payments \
   -H "Content-Type: application/json" \
   -d '{
-    "planKey": "pro-monthly",
-    "name": "Pro Monthly",
-    "price": "19.99",
-    "currency": "USDC",
-    "periodDays": 30,
-    "features": ["All features", "Priority support"]
-  }'
-```
-
-### 3. Initiate a Payment
-
-```bash
-curl -X POST https://your-service.app/api/payments/initiate \
-  -H "Authorization: Bearer your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "externalUserId": "user-123",
+    "userId": "user-123",
     "planId": "plan-uuid",
     "network": "arbitrum",
     "token": "USDC",
@@ -71,158 +184,17 @@ curl -X POST https://your-service.app/api/payments/initiate \
   }'
 ```
 
-Response:
-```json
-{
-  "paymentId": "...",
-  "receiverAddress": "0x...",
-  "amount": "19.990000",
-  "token": "USDC",
-  "network": "arbitrum",
-  "expiresAt": "2024-01-01T12:30:00.000Z",
-  "expiresIn": 1799,
-  "instructions": {...}
-}
-```
-
-## TypeScript SDK
-
-### Installation
-
-```bash
-npm install @crypto-payments/sdk
-```
-
-### Usage
-
-```typescript
-import { CryptoPaymentSDK, WebhookVerifier } from '@crypto-payments/sdk';
-
-// Initialize SDK
-const sdk = new CryptoPaymentSDK({
-  apiKey: 'your-api-key',
-  apiUrl: 'https://your-service.app',
-});
-
-// Get available networks
-const networks = await sdk.payments.getNetworks();
-
-// Initiate payment
-const payment = await sdk.payments.initiate({
-  externalUserId: 'user-123',
-  planId: 'plan-uuid',
-  network: 'arbitrum',
-  token: 'USDC',
-  senderAddress: '0x...',
-});
-
-// Confirm payment (after user sends transaction)
-await sdk.payments.confirm(payment.paymentId);
-
-// Check payment status
-const status = await sdk.payments.getStatus(payment.paymentId);
-
-// Get user subscription
-const subscription = await sdk.subscriptions.getCurrent('user-123');
-```
-
-### Webhook Verification
-
-```typescript
-import { WebhookVerifier } from '@crypto-payments/sdk';
-import express from 'express';
-
-const app = express();
-const verifier = new WebhookVerifier('your-webhook-secret');
-
-// Register event handlers
-verifier.on('payment.confirmed', (payload) => {
-  console.log('Payment confirmed:', payload.data);
-  // Activate user subscription
-});
-
-verifier.on('payment.failed', (payload) => {
-  console.log('Payment failed:', payload.data);
-  // Handle failure
-});
-
-verifier.on('subscription.created', (payload) => {
-  console.log('Subscription created:', payload.data);
-});
-
-// Use as Express middleware
-app.post('/webhooks', express.raw({ type: 'application/json' }), verifier.expressMiddleware());
-```
-
-## API Reference
-
-### Authentication
-
-All API requests (except tenant creation and health check) require an API key:
-
-```
-Authorization: Bearer your-api-key
-```
-
-### Endpoints
-
-#### Tenant Management
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/tenants` | Create new tenant (public) |
-| GET | `/api/tenant` | Get tenant info |
-| PATCH | `/api/tenant` | Update tenant (webhookUrl, payment addresses) |
-| POST | `/api/tenant/regenerate-api-key` | Regenerate API key |
-| POST | `/api/tenant/regenerate-webhook-secret` | Regenerate webhook secret |
-
-#### Plans
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/plans` | List all plans |
-| POST | `/api/plans` | Create new plan |
-| PATCH | `/api/plans/:id` | Update plan |
-
-#### Payments
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/payments/networks` | Get supported networks |
-| POST | `/api/payments/initiate` | Initiate new payment |
-| POST | `/api/payments/:id/confirm` | Confirm payment sent |
-| GET | `/api/payments/:id/status` | Get payment status |
-| GET | `/api/payments/history` | Get payment history |
-| DELETE | `/api/payments/:id` | Cancel pending payment |
-| POST | `/api/payments/validate-address` | Validate wallet address |
-
-#### Subscriptions
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/subscriptions/current` | Get current subscription |
-| GET | `/api/subscriptions/history` | Get subscription history |
-| GET | `/api/subscriptions/active` | Check if subscription active |
-
-#### System
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/health` | Health check (public) |
-
 ## Webhook Events
 
-The service sends webhook notifications for payment events:
+Optional webhook notifications for payment events:
 
 | Event | Description |
 |-------|-------------|
-| `payment.pending` | Payment initiated, awaiting blockchain transaction |
-| `payment.awaiting_confirmation` | Transaction detected, awaiting confirmations |
+| `payment.pending` | Payment initiated |
+| `payment.awaiting_confirmation` | Transaction detected |
 | `payment.confirmed` | Payment confirmed on blockchain |
-| `payment.failed` | Payment failed or expired |
-| `subscription.created` | New subscription activated |
-| `subscription.renewed` | Subscription renewed |
-| `subscription.expired` | Subscription expired |
+| `payment.expired` | Payment timeout (30 minutes) |
+| `subscription.activated` | Subscription created/renewed |
 
 ### Webhook Payload
 
@@ -232,22 +204,20 @@ The service sends webhook notifications for payment events:
   "timestamp": "2024-01-01T12:00:00.000Z",
   "data": {
     "paymentId": "...",
-    "externalUserId": "user-123",
-    "amount": "19.990000",
+    "userId": "user-123",
+    "amount": "19.99",
     "token": "USDC",
     "network": "arbitrum",
-    "txHash": "0x...",
-    "planId": "...",
-    "subscriptionId": "..."
+    "txHash": "0x..."
   }
 }
 ```
 
-### Webhook Signature
-
-Webhooks are signed using HMAC-SHA256. Verify using the `X-Webhook-Signature` header:
+### Webhook Signature Verification
 
 ```typescript
+import crypto from 'crypto';
+
 const signature = crypto
   .createHmac('sha256', webhookSecret)
   .update(JSON.stringify(payload))
@@ -255,6 +225,16 @@ const signature = crypto
 
 const isValid = signature === req.headers['x-webhook-signature'];
 ```
+
+## Payment Flow
+
+1. **Initiate**: Call `cryptoPayments.initiatePayment()` with user and plan details
+2. **Display**: Show QR code with receiver address and amount to user
+3. **User Sends**: User sends exact amount from their wallet
+4. **Confirm**: Call `cryptoPayments.confirmPaymentSent()` to start monitoring
+5. **Monitor**: Library monitors blockchain for incoming transaction
+6. **Complete**: Payment confirmed, subscription activated
+7. **Webhook**: Optional notification sent to configured URL
 
 ## Environment Variables
 
@@ -265,23 +245,14 @@ const isValid = signature === req.headers['x-webhook-signature'];
 | `ALCHEMY_API_KEY` | Alchemy API key for EVM monitoring | Yes |
 | `PAYMENT_ADDRESS_EVM` | Default EVM payment receiver address | Yes |
 | `PAYMENT_ADDRESS_TRON` | Default Tron payment receiver address | Yes |
-
-## Payment Flow
-
-1. **Initiate**: Client calls `/api/payments/initiate` with user ID, plan, network, token, and sender address
-2. **Display**: Show receiver address and amount to user
-3. **User Sends**: User sends exact amount from their wallet
-4. **Confirm**: Client calls `/api/payments/:id/confirm` to start blockchain monitoring
-5. **Monitor**: Service monitors blockchain for incoming transaction
-6. **Webhook**: On confirmation, webhook is sent to tenant's webhook URL
-7. **Subscription**: Subscription is automatically created/renewed
+| `TRONGRID_API_KEY` | TronGrid API key (optional) | No |
 
 ## Security
 
-- **API Keys**: Hashed with SHA-256 for secure lookup
 - **Sender Addresses**: Encrypted with AES-256-GCM
+- **Address Matching**: HMAC-SHA256 for secure lookup
 - **Webhook Signatures**: HMAC-SHA256 with timing-safe comparison
-- **Rate Limiting**: Tiered limits (strict: 10/min, standard: 100/min, polling: 120/min)
+- **Payment Timeout**: 30 minutes to prevent stale payments
 
 ## Development
 
@@ -295,6 +266,10 @@ npm run dev
 # Push database schema
 npm run db:push
 ```
+
+## Demo UI
+
+Visit `/pay` to test the payment flow with the built-in demo interface.
 
 ## License
 
