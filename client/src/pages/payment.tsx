@@ -453,7 +453,8 @@ export default function PaymentPage() {
                     <Input 
                       value={paymentData.receiverAddress} 
                       readOnly 
-                      className="font-mono text-sm"
+                      disabled
+                      className="font-mono text-sm bg-muted text-muted-foreground cursor-not-allowed"
                       data-testid="input-receiver-address"
                     />
                     <Button 
