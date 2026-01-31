@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Check, Copy, Loader2, ArrowLeft, ArrowRight, Wallet, CreditCard, Clock, CheckCircle2, XCircle, Zap } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 const DEMO_API_KEY = "demo_fc_crypto_payments_2024_public_key";
@@ -424,6 +425,18 @@ export default function PaymentPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="bg-white p-4 rounded-lg shadow-sm" data-testid="qr-code-container">
+                    <QRCodeSVG 
+                      value={paymentData.receiverAddress} 
+                      size={180}
+                      level="H"
+                      includeMargin={true}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Scan to copy wallet address</p>
+                </div>
+
                 <div className="rounded-lg bg-primary/5 border border-primary/20 p-4 text-center">
                   <p className="text-sm text-muted-foreground mb-1">Amount to Send</p>
                   <p className="text-3xl font-bold" data-testid="text-payment-amount">

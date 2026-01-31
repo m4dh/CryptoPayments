@@ -1,21 +1,19 @@
 import { storage } from './storage';
-import { generateApiKey, hashApiKey, generateWebhookSecret } from './utils/encryption';
+import { hashApiKey } from './utils/encryption';
 
 export async function seedDatabase(): Promise<void> {
   console.log('[Seed] Checking if seed data exists...');
   
-  try {
-    const plans = await storage.getPlansByTenant('demo-tenant');
-    if (plans.length > 0) {
-      console.log('[Seed] Seed data already exists, skipping...');
-      return;
-    }
-  } catch (error) {
-    console.log('[Seed] Creating seed data...');
-  }
-
   const DEMO_API_KEY = 'demo_fc_crypto_payments_2024_public_key';
   const demoApiKeyHash = hashApiKey(DEMO_API_KEY);
+  
+  // Check if demo tenant already exists
+  const existingTenant = await storage.getTenantByApiKeyHash(demoApiKeyHash);
+  if (existingTenant) {
+    console.log('[Seed] Demo tenant already exists, skipping seed...');
+    return;
+  }
+
   const demoWebhookSecret = 'demo_webhook_secret_for_testing';
 
   try {
