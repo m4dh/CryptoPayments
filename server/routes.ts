@@ -1,16 +1,10 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { Router } from "express";
 
-import { apiKeyAuth } from "./middleware/apiAuth";
-import { standardRateLimit, strictRateLimit, pollingRateLimit } from "./middleware/rateLimit";
-
-import * as paymentController from "./controllers/paymentController";
-import * as subscriptionController from "./controllers/subscriptionController";
-import * as tenantController from "./controllers/tenantController";
-
+import { cryptoPayments } from "./lib/cryptoPayments";
 import { blockchainMonitorService } from "./services/blockchainMonitorService";
-import { tenantService } from "./services/tenantService";
+import type { Network, Token } from "@shared/schema";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -26,44 +20,153 @@ export async function registerRoutes(
     });
   });
 
-  apiRouter.get('/demo-credentials', async (req, res) => {
+  apiRouter.get('/networks', (req: Request, res: Response) => {
+    const networks = cryptoPayments.getNetworks();
+    res.json({ networks });
+  });
+
+  apiRouter.get('/plans', async (req: Request, res: Response) => {
     try {
-      const credentials = await tenantService.getDemoCredentials();
-      if (!credentials) {
-        return res.status(404).json({ error: 'NO_DEMO', message: 'Demo tenant not available' });
-      }
-      res.json(credentials);
+      const plans = await cryptoPayments.getPlans();
+      res.json({ plans });
     } catch (error) {
-      res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to get demo credentials' });
+      console.error('[API] Error getting plans:', error);
+      res.status(500).json({ error: 'Failed to get plans' });
     }
   });
 
-  apiRouter.get('/tenants', standardRateLimit, tenantController.getAllTenants);
-  apiRouter.post('/tenants', strictRateLimit, tenantController.createTenant);
+  apiRouter.post('/plans', async (req: Request, res: Response) => {
+    try {
+      const { planKey, name, description, price, currency, periodDays, features } = req.body;
+      
+      if (!planKey || !name || !price) {
+        return res.status(400).json({ error: 'Missing required fields: planKey, name, price' });
+      }
 
-  apiRouter.use(apiKeyAuth);
+      const plan = await cryptoPayments.createPlan({
+        planKey,
+        name,
+        description,
+        price,
+        currency,
+        periodDays,
+        features,
+      });
 
-  apiRouter.get('/tenant', standardRateLimit, tenantController.getTenantInfo);
-  apiRouter.patch('/tenant', strictRateLimit, tenantController.updateTenantInfo);
-  apiRouter.post('/tenant/regenerate-api-key', strictRateLimit, tenantController.regenerateApiKey);
-  apiRouter.post('/tenant/regenerate-webhook-secret', strictRateLimit, tenantController.regenerateWebhookSecret);
+      res.status(201).json(plan);
+    } catch (error) {
+      console.error('[API] Error creating plan:', error);
+      res.status(500).json({ error: 'Failed to create plan' });
+    }
+  });
 
-  apiRouter.get('/plans', standardRateLimit, tenantController.getPlans);
-  apiRouter.post('/plans', strictRateLimit, tenantController.createPlan);
-  apiRouter.patch('/plans/:id', strictRateLimit, tenantController.updatePlan);
+  apiRouter.post('/payments', async (req: Request, res: Response) => {
+    try {
+      const { userId, planId, network, token, senderAddress } = req.body;
 
-  apiRouter.get('/payments/plans', standardRateLimit, paymentController.getPlans);
-  apiRouter.get('/payments/networks', standardRateLimit, paymentController.getNetworks);
-  apiRouter.post('/payments/initiate', strictRateLimit, paymentController.initiatePayment);
-  apiRouter.post('/payments/:id/confirm', strictRateLimit, paymentController.confirmPayment);
-  apiRouter.get('/payments/:id/status', pollingRateLimit, paymentController.getPaymentStatus);
-  apiRouter.get('/payments/history', standardRateLimit, paymentController.getPaymentHistory);
-  apiRouter.delete('/payments/:id', strictRateLimit, paymentController.cancelPayment);
-  apiRouter.post('/payments/validate-address', standardRateLimit, paymentController.validatePaymentAddress);
+      if (!userId || !planId || !network || !token || !senderAddress) {
+        return res.status(400).json({ 
+          error: 'Missing required fields: userId, planId, network, token, senderAddress' 
+        });
+      }
 
-  apiRouter.get('/subscriptions/current', standardRateLimit, subscriptionController.getCurrentSubscription);
-  apiRouter.get('/subscriptions/history', standardRateLimit, subscriptionController.getSubscriptionHistory);
-  apiRouter.get('/subscriptions/active', standardRateLimit, subscriptionController.checkSubscriptionActive);
+      const result = await cryptoPayments.initiatePayment({
+        userId,
+        planId,
+        network: network as Network,
+        token: token as Token,
+        senderAddress,
+      });
+
+      res.status(201).json(result);
+    } catch (error: any) {
+      console.error('[API] Error initiating payment:', error);
+      res.status(400).json({ error: error.message || 'Failed to initiate payment' });
+    }
+  });
+
+  apiRouter.post('/payments/:id/confirm', async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      const status = await cryptoPayments.confirmPaymentSent(id);
+      res.json(status);
+    } catch (error: any) {
+      console.error('[API] Error confirming payment:', error);
+      res.status(400).json({ error: error.message || 'Failed to confirm payment' });
+    }
+  });
+
+  apiRouter.get('/payments/:id/status', async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      const status = await cryptoPayments.getPaymentStatus(id);
+      res.json(status);
+    } catch (error: any) {
+      console.error('[API] Error getting payment status:', error);
+      res.status(404).json({ error: error.message || 'Payment not found' });
+    }
+  });
+
+  apiRouter.get('/payments/history/:userId', async (req: Request, res: Response) => {
+    try {
+      const userId = req.params.userId as string;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const payments = await cryptoPayments.getPaymentHistory(userId, limit);
+      res.json({ payments });
+    } catch (error) {
+      console.error('[API] Error getting payment history:', error);
+      res.status(500).json({ error: 'Failed to get payment history' });
+    }
+  });
+
+  apiRouter.delete('/payments/:id', async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      await cryptoPayments.cancelPayment(id);
+      res.json({ success: true, message: 'Payment cancelled' });
+    } catch (error: any) {
+      console.error('[API] Error cancelling payment:', error);
+      res.status(400).json({ error: error.message || 'Failed to cancel payment' });
+    }
+  });
+
+  apiRouter.post('/validate-address', (req: Request, res: Response) => {
+    try {
+      const { address, network } = req.body;
+      
+      if (!address || !network) {
+        return res.status(400).json({ error: 'Missing required fields: address, network' });
+      }
+
+      const result = cryptoPayments.validateAddress(address, network as Network);
+      res.json(result);
+    } catch (error) {
+      console.error('[API] Error validating address:', error);
+      res.status(500).json({ error: 'Failed to validate address' });
+    }
+  });
+
+  apiRouter.get('/subscriptions/:userId', async (req: Request, res: Response) => {
+    try {
+      const userId = req.params.userId as string;
+      const subscription = await cryptoPayments.getCurrentSubscription(userId);
+      res.json({ subscription });
+    } catch (error) {
+      console.error('[API] Error getting subscription:', error);
+      res.status(500).json({ error: 'Failed to get subscription' });
+    }
+  });
+
+  apiRouter.get('/subscriptions/:userId/history', async (req: Request, res: Response) => {
+    try {
+      const userId = req.params.userId as string;
+      const subscriptions = await cryptoPayments.getSubscriptionHistory(userId);
+      res.json({ subscriptions });
+    } catch (error) {
+      console.error('[API] Error getting subscription history:', error);
+      res.status(500).json({ error: 'Failed to get subscription history' });
+    }
+  });
 
   app.use('/api', apiRouter);
 

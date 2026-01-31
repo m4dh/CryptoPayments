@@ -1,12 +1,20 @@
-# Crypto Payment Microservice
+# Crypto Payment Library
 
 ## Overview
 
-A standalone cryptocurrency payment microservice that enables USDT/USDC payments on Arbitrum, Ethereum, and Tron networks. The system is designed as an independent REST API with multi-tenant architecture, allowing multiple applications to integrate crypto payments through API key authentication. It includes a TypeScript SDK for easy client integration, real-time blockchain monitoring, and secure webhook notifications.
+A cryptocurrency payment library that enables USDT/USDC payments on Arbitrum, Ethereum, and Tron networks. The system is designed as a native library that can be directly imported and integrated into applications without external API calls or authentication. It features real-time blockchain monitoring via Alchemy, secure webhook notifications, encrypted address storage, and a demo payment UI for testing.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+
+## Recent Changes
+
+- Refactored from multi-tenant microservice to native library architecture
+- Removed API key authentication (no longer needed for native library)
+- Simplified API endpoints for direct usage
+- Updated documentation to reflect library-based integration
+- Uses single "default" tenant internally for all operations
 
 ## System Architecture
 
@@ -22,12 +30,12 @@ Preferred communication style: Simple, everyday language.
 - **Framework**: Express.js with TypeScript
 - **Database ORM**: Drizzle ORM with PostgreSQL
 - **API Design**: RESTful endpoints under `/api` prefix
-- **Authentication**: API key-based authentication with Bearer tokens
-- **Rate Limiting**: Custom in-memory rate limiter with tenant-scoped limits
+- **Authentication**: None required (native library approach)
+- **Library**: `CryptoPaymentsLibrary` class for direct integration
 
 ### Data Storage
 - **Primary Database**: PostgreSQL with Drizzle ORM
-- **Schema Design**: Multi-tenant with tenant isolation via `tenantId` foreign keys
+- **Schema Design**: Single tenant with "default" tenant ID
 - **Core Tables**: tenants, plans, payments, subscriptions, webhook_logs
 - **Encryption**: AES-256-GCM encryption for sensitive address data
 
@@ -36,16 +44,28 @@ Preferred communication style: Simple, everyday language.
 - **Payment Flow**: Initiate → Monitor → Confirm → Activate Subscription
 - **Scheduled Jobs**: node-cron for payment expiration, subscription expiration, and webhook retries
 - **Status Tracking**: pending → awaiting_confirmation → confirmed/expired/failed
+- **Payment Timeout**: 30 minutes
+- **Polling Interval**: 5 seconds
 
 ### Webhook System
 - **Security**: HMAC-SHA256 signatures for payload verification
 - **Delivery**: Automatic retries with exponential backoff
 - **Events**: payment.created, payment.confirmed, payment.expired, subscription.activated, etc.
 
-### SDK
-- **Location**: `/sdk` directory as a separate npm package
-- **Features**: Full TypeScript types, payment initiation, status polling, webhook verification
-- **Target**: CommonJS output for broad compatibility
+### Key Components
+- **Library**: `server/lib/cryptoPayments.ts` - Main CryptoPaymentsLibrary class
+- **Storage**: `server/storage.ts` - Database abstraction layer
+- **Blockchain Monitor**: `server/services/blockchainMonitorService.ts` - Real-time transaction monitoring
+- **Demo UI**: `client/src/pages/payment.tsx` - Payment flow demonstration
+
+## API Endpoints
+
+- `GET /api/plans` - List available subscription plans
+- `GET /api/networks` - Get supported blockchain networks
+- `POST /api/payments` - Initiate a new payment
+- `POST /api/payments/:id/confirm` - Confirm payment was sent
+- `GET /api/payments/:id/status` - Check payment status
+- `GET /api/health` - Health check
 
 ## External Dependencies
 
@@ -71,3 +91,4 @@ Preferred communication style: Simple, everyday language.
 - `node-cron`: Scheduled background jobs
 - `zod`: Request validation
 - `@tanstack/react-query`: Client-side data fetching
+- `qrcode`: QR code generation for wallet addresses

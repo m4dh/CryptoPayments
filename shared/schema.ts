@@ -191,9 +191,10 @@ export const webhookLogsRelations = relations(webhookLogs, ({ one }) => ({
 
 // Zod Schemas
 export const insertTenantSchema = createInsertSchema(tenants).omit({
-  id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  id: z.string().optional(),
 });
 
 export const insertPlanSchema = createInsertSchema(plans).omit({

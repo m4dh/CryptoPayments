@@ -12,8 +12,6 @@ import { Check, Copy, Loader2, ArrowLeft, ArrowRight, Wallet, CreditCard, Clock,
 import { QRCodeSVG } from "qrcode.react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
-const DEMO_API_KEY = "demo_fc_crypto_payments_2024_public_key";
-
 type Step = "plan" | "form" | "instructions" | "status";
 
 interface Plan {
@@ -65,36 +63,23 @@ export default function PaymentPage() {
   const [selectedNetwork, setSelectedNetwork] = useState<string>("");
   const [selectedToken, setSelectedToken] = useState<string>("");
   const [senderAddress, setSenderAddress] = useState<string>("");
-  const [externalUserId] = useState<string>(`user-${Date.now()}`);
+  const [userId] = useState<string>(`user-${Date.now()}`);
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const headers = {
-    "Authorization": `Bearer ${DEMO_API_KEY}`,
-    "Content-Type": "application/json",
-  };
-
   const { data: plansData, isLoading: plansLoading } = useQuery<{ plans: Plan[] }>({
     queryKey: ["/api/plans"],
-    queryFn: async () => {
-      const res = await fetch("/api/plans", { headers });
-      return res.json();
-    },
   });
 
   const { data: networksData, isLoading: networksLoading } = useQuery<{ networks: Network[] }>({
-    queryKey: ["/api/payments/networks"],
-    queryFn: async () => {
-      const res = await fetch("/api/payments/networks", { headers });
-      return res.json();
-    },
+    queryKey: ["/api/networks"],
   });
 
   const { data: statusData, refetch: refetchStatus } = useQuery<PaymentStatus>({
     queryKey: ["/api/payments", paymentData?.paymentId, "status"],
     queryFn: async () => {
-      const res = await fetch(`/api/payments/${paymentData?.paymentId}/status`, { headers });
+      const res = await fetch(`/api/payments/${paymentData?.paymentId}/status`);
       return res.json();
     },
     enabled: step === "status" && !!paymentData?.paymentId,
@@ -103,14 +88,14 @@ export default function PaymentPage() {
 
   const initiateMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await fetch("/api/payments/initiate", {
+      const res = await fetch("/api/payments", {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.message || "Failed to initiate payment");
+        throw new Error(err.error || "Failed to initiate payment");
       }
       return res.json();
     },
@@ -128,7 +113,6 @@ export default function PaymentPage() {
     mutationFn: async () => {
       const res = await fetch(`/api/payments/${paymentData?.paymentId}/confirm`, {
         method: "POST",
-        headers,
       });
       if (!res.ok) {
         const err = await res.json();
@@ -157,7 +141,7 @@ export default function PaymentPage() {
     }
 
     initiateMutation.mutate({
-      externalUserId,
+      userId,
       planId: selectedPlan.id,
       network: selectedNetwork,
       token: selectedToken,

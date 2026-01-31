@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Copy, Check, ExternalLink, Zap, Shield, Globe, Code, Key } from "lucide-react";
+import { Copy, Check, ExternalLink, Zap, Shield, Globe, Code } from "lucide-react";
 import { useState } from "react";
 import futureAndCodeLogo from "@/assets/futureandcode_czarne_x100.svg";
 
@@ -28,16 +28,18 @@ export default function Home() {
     </Button>
   );
 
-  const initCode = `import { CryptoPaymentSDK } from '@crypto-payments/sdk';
+  const initCode = `// Import the crypto payments library directly
+import { cryptoPayments } from './lib/cryptoPayments';
 
-const sdk = new CryptoPaymentSDK({
-  apiKey: 'your-api-key',
-  apiUrl: 'https://your-service.app',
+// Configure payment addresses (or use env vars)
+cryptoPayments.configure({
+  paymentAddressEvm: '0x...',
+  paymentAddressTron: 'T...',
 });`;
 
   const paymentCode = `// Initiate a payment
-const payment = await sdk.payments.initiate({
-  externalUserId: 'user-123',
+const payment = await cryptoPayments.initiatePayment({
+  userId: 'user-123',
   planId: 'pro-monthly',
   network: 'arbitrum',
   token: 'USDC',
@@ -45,32 +47,34 @@ const payment = await sdk.payments.initiate({
 });
 
 // Confirm payment after user sends transaction
-await sdk.payments.confirm(payment.paymentId);
+await cryptoPayments.confirmPaymentSent(payment.paymentId);
 
-// Poll for status
-const status = await sdk.payments.getStatus(payment.paymentId);`;
+// Get payment status
+const status = await cryptoPayments.getPaymentStatus(payment.paymentId);`;
 
-  const webhookCode = `import { WebhookVerifier } from '@crypto-payments/sdk';
+  const webhookCode = `// Webhook notification example (optional)
+import { webhookService } from './services/webhookService';
 
-const verifier = new WebhookVerifier('webhook-secret');
-
-verifier.on('payment.confirmed', (payload) => {
-  console.log('Payment confirmed:', payload.data);
-  // Activate user subscription
+// Configure webhook URL for notifications
+webhookService.configure({
+  url: 'https://your-app.com/webhooks',
+  secret: 'your-secret',
 });
 
-app.post('/webhooks', verifier.expressMiddleware());`;
+// Events: payment.confirmed, payment.expired, subscription.activated`;
 
-  const curlExample = `curl -X POST https://your-service.app/api/payments/initiate \\
-  -H "Authorization: Bearer your-api-key" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "externalUserId": "user-123",
-    "planId": "pro-monthly",
-    "network": "arbitrum",
-    "token": "USDC",
-    "senderAddress": "0x..."
-  }'`;
+  const curlExample = `# Native library - no API calls needed!
+# Simply import and use directly in your code:
+
+import { cryptoPayments } from './lib/cryptoPayments';
+
+const payment = await cryptoPayments.initiatePayment({
+  userId: 'user-123',
+  planId: 'pro-monthly',
+  network: 'arbitrum',
+  token: 'USDC',
+  senderAddress: '0x...',
+});`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,7 +86,7 @@ app.post('/webhooks', verifier.expressMiddleware());`;
                 <Zap className="h-6 w-6 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-xl font-semibold" data-testid="text-title">Crypto Payment Service</h1>
+                <h1 className="text-xl font-semibold" data-testid="text-title">Crypto Payment Library</h1>
                 <p className="text-sm text-muted-foreground">USDT/USDC payments on Arbitrum, Ethereum, Tron</p>
               </div>
             </div>
@@ -90,10 +94,7 @@ app.post('/webhooks', verifier.expressMiddleware());`;
               <Button asChild data-testid="button-try-payment">
                 <a href="/pay">Try Payment Demo</a>
               </Button>
-              <Button asChild variant="outline" data-testid="button-admin">
-                <a href="/admin"><Key className="h-4 w-4 mr-2" />Manage API Keys</a>
-              </Button>
-              <Badge variant="secondary" data-testid="badge-version">v1.0.0</Badge>
+              <Badge variant="secondary" data-testid="badge-version">v2.0.0</Badge>
               <Badge variant="outline" className="text-green-600 border-green-600" data-testid="badge-status">
                 Operational
               </Badge>
@@ -164,15 +165,15 @@ app.post('/webhooks', verifier.expressMiddleware());`;
           <Card data-testid="card-quickstart">
             <CardHeader>
               <CardTitle>Quick Start</CardTitle>
-              <CardDescription>Get started with the SDK in minutes</CardDescription>
+              <CardDescription>Import and use the library directly in your code</CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="sdk" className="w-full">
+              <Tabs defaultValue="setup" className="w-full">
                 <TabsList className="grid w-full grid-cols-2" data-testid="tabs-code-examples">
-                  <TabsTrigger value="sdk">SDK</TabsTrigger>
-                  <TabsTrigger value="curl">cURL</TabsTrigger>
+                  <TabsTrigger value="setup">Setup</TabsTrigger>
+                  <TabsTrigger value="usage">Usage</TabsTrigger>
                 </TabsList>
-                <TabsContent value="sdk" className="mt-4">
+                <TabsContent value="setup" className="mt-4">
                   <div className="relative">
                     <pre className="p-4 rounded-lg bg-muted text-sm overflow-x-auto">
                       <code>{initCode}</code>
@@ -180,7 +181,7 @@ app.post('/webhooks', verifier.expressMiddleware());`;
                     <CopyButton text={initCode} id="init" />
                   </div>
                 </TabsContent>
-                <TabsContent value="curl" className="mt-4">
+                <TabsContent value="usage" className="mt-4">
                   <div className="relative">
                     <pre className="p-4 rounded-lg bg-muted text-sm overflow-x-auto">
                       <code>{curlExample}</code>
@@ -200,15 +201,11 @@ app.post('/webhooks', verifier.expressMiddleware());`;
             <CardContent>
               <ScrollArea className="h-[280px]">
                 <div className="space-y-3">
-                  <EndpointItem method="POST" path="/api/tenants" description="Create new tenant" />
-                  <EndpointItem method="GET" path="/api/tenant" description="Get tenant info" />
-                  <EndpointItem method="GET" path="/api/plans" description="List plans" />
-                  <EndpointItem method="POST" path="/api/plans" description="Create plan" />
-                  <EndpointItem method="GET" path="/api/payments/networks" description="Get networks" />
-                  <EndpointItem method="POST" path="/api/payments/initiate" description="Start payment" />
-                  <EndpointItem method="POST" path="/api/payments/:id/confirm" description="Confirm payment" />
-                  <EndpointItem method="GET" path="/api/payments/:id/status" description="Check status" />
-                  <EndpointItem method="GET" path="/api/subscriptions/current" description="Get subscription" />
+                  <EndpointItem method="GET" path="/api/plans" description="List available plans" />
+                  <EndpointItem method="GET" path="/api/networks" description="Get supported networks" />
+                  <EndpointItem method="POST" path="/api/payments" description="Initiate payment" />
+                  <EndpointItem method="POST" path="/api/payments/:id/confirm" description="Confirm payment sent" />
+                  <EndpointItem method="GET" path="/api/payments/:id/status" description="Check payment status" />
                   <EndpointItem method="GET" path="/api/health" description="Health check" />
                 </div>
               </ScrollArea>
@@ -282,7 +279,7 @@ app.post('/webhooks', verifier.expressMiddleware());`;
       <footer className="border-t bg-card mt-12">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <p>Crypto Payment Service - Microservice for USDT/USDC payments</p>
+            <p>Crypto Payment Library - Native USDT/USDC payment integration</p>
             <a 
               href="https://futureandcode.com" 
               target="_blank" 

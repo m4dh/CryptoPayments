@@ -1,38 +1,36 @@
 import { storage } from './storage';
-import { hashApiKey } from './utils/encryption';
 
 export async function seedDatabase(): Promise<void> {
-  console.log('[Seed] Checking if seed data exists...');
+  console.log('[Seed] Checking if default tenant exists...');
   
-  const DEMO_API_KEY = 'demo_fc_crypto_payments_2024_public_key';
-  const demoApiKeyHash = hashApiKey(DEMO_API_KEY);
-  
-  // Check if demo tenant already exists
-  const existingTenant = await storage.getTenantByApiKeyHash(demoApiKeyHash);
-  if (existingTenant) {
-    console.log('[Seed] Demo tenant already exists, skipping seed...');
-    return;
-  }
-
-  const demoWebhookSecret = 'demo_webhook_secret_for_testing';
-
-  try {
-    const demoTenant = await storage.createTenant({
-      name: 'Demo Application',
-      apiKey: DEMO_API_KEY.substring(0, 12) + '...',
-      apiKeyHash: demoApiKeyHash,
+  let tenant = await storage.getTenant('default');
+  if (!tenant) {
+    console.log('[Seed] Creating default tenant...');
+    tenant = await storage.createTenant({
+      id: 'default',
+      name: 'Default Application',
+      apiKey: 'local',
+      apiKeyHash: 'local',
       webhookUrl: null,
-      webhookSecret: demoWebhookSecret,
+      webhookSecret: null,
       paymentAddressEvm: process.env.PAYMENT_ADDRESS_EVM || null,
       paymentAddressTron: process.env.PAYMENT_ADDRESS_TRON || null,
       isActive: true,
     });
+    console.log('[Seed] Default tenant created');
+  }
 
-    console.log('[Seed] Created demo tenant:', demoTenant.id);
-    console.log('[Seed] Demo API Key:', DEMO_API_KEY);
+  const existingPlans = await storage.getPlansByTenant('default');
+  if (existingPlans.length > 0) {
+    console.log('[Seed] Plans already exist, skipping...');
+    return;
+  }
 
+  console.log('[Seed] Creating default plans...');
+
+  try {
     await storage.createPlan({
-      tenantId: demoTenant.id,
+      tenantId: 'default',
       planKey: 'free',
       name: 'Free',
       description: 'Basic features for getting started',
@@ -44,7 +42,7 @@ export async function seedDatabase(): Promise<void> {
     });
 
     await storage.createPlan({
-      tenantId: demoTenant.id,
+      tenantId: 'default',
       planKey: 'pro-monthly',
       name: 'Pro Monthly',
       description: 'All features with priority support',
@@ -56,7 +54,7 @@ export async function seedDatabase(): Promise<void> {
     });
 
     await storage.createPlan({
-      tenantId: demoTenant.id,
+      tenantId: 'default',
       planKey: 'pro-yearly',
       name: 'Pro Yearly',
       description: 'Best value - 2 months free',
@@ -68,7 +66,7 @@ export async function seedDatabase(): Promise<void> {
     });
 
     await storage.createPlan({
-      tenantId: demoTenant.id,
+      tenantId: 'default',
       planKey: 'enterprise',
       name: 'Enterprise',
       description: 'Custom solutions for large teams',
@@ -79,7 +77,7 @@ export async function seedDatabase(): Promise<void> {
       isActive: true,
     });
 
-    console.log('[Seed] Created 4 demo plans');
+    console.log('[Seed] Created 4 default plans');
     console.log('[Seed] Database seeding completed successfully');
   } catch (error) {
     console.error('[Seed] Error seeding database:', error);
