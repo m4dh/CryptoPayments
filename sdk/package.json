@@ -1,0 +1,39 @@
+{
+  "name": "@crypto-payments/sdk",
+  "version": "1.0.0",
+  "description": "SDK for Crypto Payment Service - USDT/USDC payments on Arbitrum, Ethereum, Tron",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "crypto",
+    "payments",
+    "usdt",
+    "usdc",
+    "arbitrum",
+    "ethereum",
+    "tron",
+    "sdk"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "typescript": ">=4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  }
+}
