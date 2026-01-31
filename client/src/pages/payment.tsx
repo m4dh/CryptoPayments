@@ -540,9 +540,20 @@ export default function PaymentPage() {
                 )}
 
                 {statusData?.status === "confirmed" && (
-                  <div className="flex justify-center">
+                  <div className="flex justify-center gap-2">
+                    <Button variant="outline" onClick={() => { setStep("plan"); setPaymentData(null); setSelectedPlan(null); }} data-testid="button-new-payment">
+                      Make Another Payment
+                    </Button>
                     <Button onClick={() => window.location.href = "/"} data-testid="button-done">
                       Done
+                    </Button>
+                  </div>
+                )}
+
+                {(statusData?.status === "pending" || statusData?.status === "awaiting_confirmation" || !statusData?.status || statusData?.status === "awaiting_payment") && (
+                  <div className="flex justify-center mt-4">
+                    <Button variant="ghost" onClick={() => { setStep("plan"); setPaymentData(null); setSelectedPlan(null); }} data-testid="button-new-payment">
+                      Make Another Payment
                     </Button>
                   </div>
                 )}
