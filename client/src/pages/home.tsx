@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Copy, Check, ExternalLink, Zap, Shield, Globe, Code } from "lucide-react";
+import { Copy, Check, ExternalLink, Zap, Shield, Globe, Code, Key } from "lucide-react";
 import { useState } from "react";
 import futureAndCodeLogo from "@/assets/futureandcode_czarne_x100.svg";
 
@@ -89,6 +89,9 @@ app.post('/webhooks', verifier.expressMiddleware());`;
             <div className="flex items-center gap-3">
               <Button asChild data-testid="button-try-payment">
                 <a href="/pay">Try Payment Demo</a>
+              </Button>
+              <Button asChild variant="outline" data-testid="button-admin">
+                <a href="/admin"><Key className="h-4 w-4 mr-2" />Manage API Keys</a>
               </Button>
               <Badge variant="secondary" data-testid="badge-version">v1.0.0</Badge>
               <Badge variant="outline" className="text-green-600 border-green-600" data-testid="badge-status">

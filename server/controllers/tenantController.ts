@@ -29,6 +29,25 @@ const updatePlanSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+export async function getAllTenants(req: Request, res: Response) {
+  try {
+    const tenants = await tenantService.getAllTenants();
+    res.json({ 
+      tenants: tenants.map(t => ({
+        id: t.id,
+        name: t.name,
+        apiKey: t.apiKey,
+        webhookUrl: t.webhookUrl,
+        isActive: t.isActive,
+        createdAt: t.createdAt,
+      }))
+    });
+  } catch (error) {
+    console.error('[TenantController] Error getting tenants:', error);
+    res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to get tenants' });
+  }
+}
+
 export async function createTenant(req: Request, res: Response) {
   try {
     const parsed = createTenantSchema.safeParse(req.body);

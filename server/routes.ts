@@ -38,6 +38,7 @@ export async function registerRoutes(
     }
   });
 
+  apiRouter.get('/tenants', standardRateLimit, tenantController.getAllTenants);
   apiRouter.post('/tenants', strictRateLimit, tenantController.createTenant);
 
   apiRouter.use(apiKeyAuth);

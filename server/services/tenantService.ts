@@ -48,8 +48,16 @@ class TenantService {
     return storage.getTenant(id);
   }
 
+  async getAllTenants(): Promise<Tenant[]> {
+    return storage.getAllTenants();
+  }
+
   async updateTenant(id: string, data: Partial<Tenant>): Promise<Tenant | undefined> {
     return storage.updateTenant(id, data);
+  }
+
+  async deleteTenant(id: string): Promise<boolean> {
+    return storage.deleteTenant(id);
   }
 
   async regenerateApiKey(tenantId: string): Promise<{ apiKey: string } | null> {
