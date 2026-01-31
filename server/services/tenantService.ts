@@ -95,6 +95,16 @@ class TenantService {
     }
     return storage.updatePlan(planId, data);
   }
+
+  async getDemoCredentials(): Promise<{ apiKey: string; tenantId: string } | null> {
+    const DEMO_API_KEY = 'demo_fc_crypto_payments_2024_public_key';
+    const tenant = await this.getTenantByApiKey(DEMO_API_KEY);
+    if (!tenant) return null;
+    return {
+      apiKey: DEMO_API_KEY,
+      tenantId: tenant.id,
+    };
+  }
 }
 
 export const tenantService = new TenantService();

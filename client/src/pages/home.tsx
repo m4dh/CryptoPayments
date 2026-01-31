@@ -86,7 +86,10 @@ app.post('/webhooks', verifier.expressMiddleware());`;
                 <p className="text-sm text-muted-foreground">USDT/USDC payments on Arbitrum, Ethereum, Tron</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <Button asChild data-testid="button-try-payment">
+                <a href="/pay">Try Payment Demo</a>
+              </Button>
               <Badge variant="secondary" data-testid="badge-version">v1.0.0</Badge>
               <Badge variant="outline" className="text-green-600 border-green-600" data-testid="badge-status">
                 Operational

@@ -14,14 +14,14 @@ export async function seedDatabase(): Promise<void> {
     console.log('[Seed] Creating seed data...');
   }
 
-  const demoApiKey = 'demo_' + generateApiKey().substring(0, 56);
-  const demoApiKeyHash = hashApiKey(demoApiKey);
-  const demoWebhookSecret = generateWebhookSecret();
+  const DEMO_API_KEY = 'demo_fc_crypto_payments_2024_public_key';
+  const demoApiKeyHash = hashApiKey(DEMO_API_KEY);
+  const demoWebhookSecret = 'demo_webhook_secret_for_testing';
 
   try {
     const demoTenant = await storage.createTenant({
       name: 'Demo Application',
-      apiKey: demoApiKey.substring(0, 12) + '...',
+      apiKey: DEMO_API_KEY.substring(0, 12) + '...',
       apiKeyHash: demoApiKeyHash,
       webhookUrl: null,
       webhookSecret: demoWebhookSecret,
@@ -31,7 +31,7 @@ export async function seedDatabase(): Promise<void> {
     });
 
     console.log('[Seed] Created demo tenant:', demoTenant.id);
-    console.log('[Seed] Demo API Key (save this!):', demoApiKey);
+    console.log('[Seed] Demo API Key:', DEMO_API_KEY);
 
     await storage.createPlan({
       tenantId: demoTenant.id,

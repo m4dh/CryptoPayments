@@ -10,6 +10,7 @@ import * as subscriptionController from "./controllers/subscriptionController";
 import * as tenantController from "./controllers/tenantController";
 
 import { blockchainMonitorService } from "./services/blockchainMonitorService";
+import { tenantService } from "./services/tenantService";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -23,6 +24,18 @@ export async function registerRoutes(
       timestamp: new Date().toISOString(),
       monitorQueueSize: blockchainMonitorService.getQueueSize(),
     });
+  });
+
+  apiRouter.get('/demo-credentials', async (req, res) => {
+    try {
+      const credentials = await tenantService.getDemoCredentials();
+      if (!credentials) {
+        return res.status(404).json({ error: 'NO_DEMO', message: 'Demo tenant not available' });
+      }
+      res.json(credentials);
+    } catch (error) {
+      res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to get demo credentials' });
+    }
   });
 
   apiRouter.post('/tenants', strictRateLimit, tenantController.createTenant);
