@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Check, Copy, Loader2, ArrowLeft, ArrowRight, Wallet, CreditCard, Clock, CheckCircle2, XCircle, Zap } from "lucide-react";
+import { Check, Copy, Loader2, ArrowLeft, ArrowRight, Wallet, CreditCard, Clock, CheckCircle2, XCircle, Zap, ShieldCheck, ShieldAlert } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -67,6 +67,8 @@ export default function PaymentPage() {
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ofacStatus, setOfacStatus] = useState<'idle' | 'checking' | 'clean' | 'sanctioned'>('idle');
+  const [ofacDetails, setOfacDetails] = useState<string | null>(null);
 
   const { data: plansData, isLoading: plansLoading } = useQuery<{ plans: Plan[] }>({
     queryKey: ["/api/plans"],
@@ -128,6 +130,45 @@ export default function PaymentPage() {
       setError(err.message);
     },
   });
+
+  const checkOfacAddress = async (address: string) => {
+    if (!address || address.length < 10) {
+      setOfacStatus('idle');
+      setOfacDetails(null);
+      return;
+    }
+    setOfacStatus('checking');
+    try {
+      const res = await fetch(`/api/ofac/check/${encodeURIComponent(address)}`);
+      const data = await res.json();
+      if (data.isSanctioned) {
+        setOfacStatus('sanctioned');
+        const names = data.matchedEntries?.map((e: any) => e.sdnName).filter(Boolean).join(', ');
+        setOfacDetails(names || 'Sanctioned entity');
+      } else {
+        setOfacStatus('clean');
+        setOfacDetails(null);
+      }
+    } catch {
+      setOfacStatus('idle');
+    }
+  };
+
+  const ofacTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleAddressChange = (value: string) => {
+    setSenderAddress(value);
+    setError(null);
+    if (ofacTimerRef.current) {
+      clearTimeout(ofacTimerRef.current);
+    }
+    if (value.length >= 10) {
+      ofacTimerRef.current = setTimeout(() => checkOfacAddress(value), 500);
+    } else {
+      setOfacStatus('idle');
+      setOfacDetails(null);
+    }
+  };
 
   const handlePlanSelect = (plan: Plan) => {
     setSelectedPlan(plan);
@@ -348,13 +389,37 @@ export default function PaymentPage() {
                       id="address"
                       placeholder={selectedNetwork === "tron" ? "T..." : "0x..."}
                       value={senderAddress}
-                      onChange={(e) => setSenderAddress(e.target.value)}
+                      onChange={(e) => handleAddressChange(e.target.value)}
                       data-testid="input-wallet-address"
                     />
+                    {ofacStatus === 'checking' && (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" data-testid="ofac-checking" />
+                    )}
+                    {ofacStatus === 'clean' && (
+                      <ShieldCheck className="h-4 w-4 text-green-600" data-testid="ofac-clean" />
+                    )}
+                    {ofacStatus === 'sanctioned' && (
+                      <ShieldAlert className="h-4 w-4 text-red-600" data-testid="ofac-sanctioned" />
+                    )}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Enter the wallet address you will send payment from
-                  </p>
+                  {ofacStatus === 'sanctioned' && (
+                    <Alert variant="destructive" className="mt-2">
+                      <ShieldAlert className="h-4 w-4" />
+                      <AlertDescription data-testid="text-ofac-warning">
+                        This address is on the OFAC sanctions list{ofacDetails ? ` (${ofacDetails})` : ''}. Payments from sanctioned addresses are blocked.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  {ofacStatus === 'clean' && (
+                    <p className="text-xs text-green-600" data-testid="text-ofac-clean">
+                      OFAC compliance check passed
+                    </p>
+                  )}
+                  {ofacStatus !== 'sanctioned' && ofacStatus !== 'clean' && (
+                    <p className="text-xs text-muted-foreground">
+                      Enter the wallet address you will send payment from
+                    </p>
+                  )}
                 </div>
 
                 {selectedNetworkData && (
@@ -376,7 +441,7 @@ export default function PaymentPage() {
                 </Button>
                 <Button 
                   onClick={handleFormSubmit} 
-                  disabled={!selectedNetwork || !selectedToken || !senderAddress || initiateMutation.isPending}
+                  disabled={!selectedNetwork || !selectedToken || !senderAddress || initiateMutation.isPending || ofacStatus === 'sanctioned'}
                   data-testid="button-continue"
                 >
                   {initiateMutation.isPending ? (

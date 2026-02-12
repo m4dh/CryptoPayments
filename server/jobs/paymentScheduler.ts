@@ -3,6 +3,7 @@ import { paymentService } from '../services/paymentService';
 import { subscriptionService } from '../services/subscriptionService';
 import { webhookService } from '../services/webhookService';
 import { blockchainMonitorService } from '../services/blockchainMonitorService';
+import { ofacService } from '../services/ofacService';
 
 class PaymentScheduler {
   private jobs: cron.ScheduledTask[] = [];
@@ -51,9 +52,23 @@ class PaymentScheduler {
       }
     });
 
-    this.jobs.push(checkNewPaymentsJob, expirePaymentsJob, expireSubscriptionsJob, retryWebhooksJob);
+    const ofacUpdateJob = cron.schedule('0 0 * * *', async () => {
+      try {
+        console.log('[Scheduler] Running daily OFAC list update...');
+        const result = await ofacService.updateList();
+        if (result.success) {
+          console.log(`[Scheduler] OFAC update: ${result.totalAddresses} addresses (${result.newAddresses} new, ${result.removedAddresses} removed)`);
+        } else {
+          console.error('[Scheduler] OFAC update failed:', result.error);
+        }
+      } catch (error) {
+        console.error('[Scheduler] Error updating OFAC list:', error);
+      }
+    });
 
-    console.log('[Scheduler] Payment scheduler started with 4 jobs');
+    this.jobs.push(checkNewPaymentsJob, expirePaymentsJob, expireSubscriptionsJob, retryWebhooksJob, ofacUpdateJob);
+
+    console.log('[Scheduler] Payment scheduler started with 5 jobs (including daily OFAC update at midnight UTC)');
   }
 
   stop(): void {

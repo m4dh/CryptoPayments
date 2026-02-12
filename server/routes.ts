@@ -4,6 +4,7 @@ import { Router } from "express";
 
 import { cryptoPayments } from "./lib/cryptoPayments";
 import { blockchainMonitorService } from "./services/blockchainMonitorService";
+import { ofacService } from "./services/ofacService";
 import type { Network, Token } from "@shared/schema";
 
 export async function registerRoutes(
@@ -168,6 +169,44 @@ export async function registerRoutes(
     }
   });
 
+  // OFAC Compliance Endpoints
+  const ofacRouter = Router();
+
+  ofacRouter.get('/status', async (req: Request, res: Response) => {
+    try {
+      const status = await ofacService.getStatus();
+      res.json(status);
+    } catch (error: any) {
+      console.error('[OFAC API] Error getting status:', error);
+      res.status(500).json({ error: 'Failed to get OFAC status' });
+    }
+  });
+
+  ofacRouter.get('/check/:address', async (req: Request, res: Response) => {
+    try {
+      const address = req.params.address;
+      if (!address) {
+        return res.status(400).json({ error: 'Address parameter is required' });
+      }
+      const result = await ofacService.checkAddress(address);
+      res.json(result);
+    } catch (error: any) {
+      console.error('[OFAC API] Error checking address:', error);
+      res.status(500).json({ error: 'Failed to check address' });
+    }
+  });
+
+  ofacRouter.post('/update', async (req: Request, res: Response) => {
+    try {
+      const result = await ofacService.updateList();
+      res.json(result);
+    } catch (error: any) {
+      console.error('[OFAC API] Error updating list:', error);
+      res.status(500).json({ error: 'Failed to update OFAC list' });
+    }
+  });
+
+  apiRouter.use('/ofac', ofacRouter);
   app.use('/api', apiRouter);
 
   blockchainMonitorService.startMonitoring().catch(err => {

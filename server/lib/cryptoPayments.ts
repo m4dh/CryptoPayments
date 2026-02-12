@@ -1,6 +1,7 @@
 import { storage } from "../storage";
 import { encryptAddress, hashApiKey } from "../utils/encryption";
 import { validateEvmAddress, validateTronAddress } from "../utils/addressValidation";
+import { ofacService } from "../services/ofacService";
 import type { Payment, Plan, Subscription, Network, Token } from "@shared/schema";
 
 export interface PaymentConfig {
@@ -143,6 +144,12 @@ class CryptoPaymentsLibrary {
       if (!result.valid) {
         throw new Error(result.error || 'Invalid Ethereum address');
       }
+    }
+
+    const ofacCheck = await ofacService.checkAddress(senderAddress);
+    if (ofacCheck.isSanctioned) {
+      const names = ofacCheck.matchedEntries.map(e => e.sdnName).filter(Boolean).join(', ');
+      throw new Error(`OFAC_SANCTIONED: Address ${senderAddress} is on the OFAC SDN sanctions list (${names}). Transaction blocked for compliance.`);
     }
 
     const receiverAddress = network === 'tron' 

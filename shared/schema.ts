@@ -262,6 +262,42 @@ export interface NetworkConfig {
   explorerTxPath: string;
 }
 
+// OFAC Sanctioned Addresses
+export const ofacSanctionedAddresses = pgTable("ofac_sanctioned_addresses", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  address: varchar("address", { length: 256 }).notNull(),
+  addressLower: varchar("address_lower", { length: 256 }).notNull(),
+  addressType: varchar("address_type", { length: 50 }).notNull(),
+  sdnName: text("sdn_name"),
+  sdnId: varchar("sdn_id", { length: 50 }),
+  source: varchar("source", { length: 50 }).notNull().default('OFAC_SDN'),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastSeenAt: timestamp("last_seen_at").defaultNow().notNull(),
+}, (table) => ({
+  addressLowerIdx: index("idx_ofac_address_lower").on(table.addressLower),
+  addressTypeIdx: index("idx_ofac_address_type").on(table.addressType),
+}));
+
+export const ofacUpdateLog = pgTable("ofac_update_log", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  totalAddresses: integer("total_addresses").notNull().default(0),
+  newAddresses: integer("new_addresses").notNull().default(0),
+  removedAddresses: integer("removed_addresses").notNull().default(0),
+  sourceUrl: text("source_url"),
+  success: boolean("success").notNull().default(true),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertOfacAddressSchema = createInsertSchema(ofacSanctionedAddresses).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type OfacSanctionedAddress = typeof ofacSanctionedAddresses.$inferSelect;
+export type InsertOfacAddress = z.infer<typeof insertOfacAddressSchema>;
+export type OfacUpdateLog = typeof ofacUpdateLog.$inferSelect;
+
 // Legacy users table (kept for compatibility)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

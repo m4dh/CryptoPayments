@@ -4,6 +4,7 @@ import { serveStatic } from "./static";
 import { createServer } from "http";
 import { paymentScheduler } from "./jobs/paymentScheduler";
 import { seedDatabase } from "./seed";
+import { ofacService } from "./services/ofacService";
 
 const app = express();
 const httpServer = createServer(app);
@@ -103,6 +104,20 @@ app.use((req, res, next) => {
       
       await seedDatabase();
       paymentScheduler.start();
+
+      const ofacStatus = await ofacService.getStatus();
+      if (ofacStatus.totalAddresses === 0) {
+        console.log('[OFAC] No addresses in database, starting initial load...');
+        ofacService.updateList().then(result => {
+          if (result.success) {
+            console.log(`[OFAC] Initial load complete: ${result.totalAddresses} addresses loaded`);
+          } else {
+            console.error('[OFAC] Initial load failed:', result.error);
+          }
+        });
+      } else {
+        console.log(`[OFAC] ${ofacStatus.totalAddresses} sanctioned addresses in database (last update: ${ofacStatus.lastUpdate})`);
+      }
     },
   );
 })();
