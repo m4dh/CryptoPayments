@@ -1,54 +1,54 @@
 # Crypto Payment Library
 
-Natywna biblioteka do obslugi platnosci kryptowalutowych USDT/USDC na sieciach Arbitrum, Ethereum i Tron. Zaprojektowana do bezposredniej integracji z aplikacja - bez zewnetrznych wywolan API, bez kluczy autoryzacyjnych. System zawiera monitoring blockchain w czasie rzeczywistym, szyfrowane przechowywanie adresow, system webhookow oraz weryfikacje OFAC (Office of Foreign Assets Control) blokujaca transakcje z sankcjonowanych adresow.
+A native cryptocurrency payment library for USDT/USDC payments on Arbitrum, Ethereum, and Tron networks. Designed for direct integration into your application — no external API calls, no authentication keys required. The system includes real-time blockchain monitoring, encrypted address storage, webhook notifications, and OFAC (Office of Foreign Assets Control) sanctions compliance verification that blocks transactions from sanctioned addresses.
 
 ---
 
-## Spis tresci
+## Table of Contents
 
-1. [Glowne funkcjonalnosci](#glowne-funkcjonalnosci)
-2. [Obslugiwane sieci](#obslugiwane-sieci)
-3. [Architektura systemu](#architektura-systemu)
-4. [Szybki start](#szybki-start)
-5. [API biblioteki (natywne)](#api-biblioteki-natywne)
+1. [Key Features](#key-features)
+2. [Supported Networks](#supported-networks)
+3. [System Architecture](#system-architecture)
+4. [Quick Start](#quick-start)
+5. [Library API (Native)](#library-api-native)
 6. [REST API](#rest-api)
-7. [System OFAC - weryfikacja sankcji](#system-ofac---weryfikacja-sankcji)
-8. [System webhookow](#system-webhookow)
-9. [Monitoring blockchain](#monitoring-blockchain)
-10. [Zadania cykliczne (Scheduler)](#zadania-cykliczne-scheduler)
-11. [Bezpieczenstwo i szyfrowanie](#bezpieczenstwo-i-szyfrowanie)
-12. [Baza danych - schemat](#baza-danych---schemat)
-13. [Zmienne srodowiskowe](#zmienne-srodowiskowe)
-14. [Struktura projektu](#struktura-projektu)
-15. [Frontend - Demo UI](#frontend---demo-ui)
-16. [Rozwoj i testowanie](#rozwoj-i-testowanie)
+7. [OFAC Compliance System](#ofac-compliance-system)
+8. [Webhook System](#webhook-system)
+9. [Blockchain Monitoring](#blockchain-monitoring)
+10. [Scheduled Jobs](#scheduled-jobs)
+11. [Security & Encryption](#security--encryption)
+12. [Database Schema](#database-schema)
+13. [Environment Variables](#environment-variables)
+14. [Project Structure](#project-structure)
+15. [Frontend — Demo UI](#frontend--demo-ui)
+16. [Development & Testing](#development--testing)
 
 ---
 
-## Glowne funkcjonalnosci
+## Key Features
 
-- **Platnosci wielosieciowe**: Arbitrum (rekomendowany), Ethereum, Tron
-- **Stablecoiny**: USDT i USDC na wszystkich wspieranych sieciach
-- **Natywna biblioteka**: Import i uzycie bezposrednie - bez kluczy API
-- **Monitoring blockchain**: Wykrywanie transakcji w czasie rzeczywistym przez Alchemy SDK (EVM) i TronGrid (Tron)
-- **Weryfikacja OFAC**: Automatyczne sprawdzanie adresow nadawcow wobec listy sankcji SDN Departamentu Skarbu USA
-- **Webhooks**: Opcjonalne powiadomienia z podpisem HMAC-SHA256 i automatycznymi ponownymi proba
-- **Szyfrowanie**: AES-256-GCM dla wrażliwych danych adresowych
-- **Demo UI**: Wbudowany interfejs platnosci do testowania
-- **Plany subskrypcyjne**: Zarzadzanie planami cenowymi z automatyczna aktywacja subskrypcji
-- **QR Code**: Generowanie kodow QR dla adresow portfeli
+- **Multi-Network Payments**: Arbitrum (recommended), Ethereum, Tron
+- **Stablecoin Support**: USDT and USDC on all supported networks
+- **Native Library**: Import and use directly — no API keys required
+- **Blockchain Monitoring**: Real-time transaction detection via Alchemy SDK (EVM) and TronGrid (Tron)
+- **OFAC Compliance**: Automatic sender address verification against the US Treasury SDN sanctions list
+- **Webhooks**: Optional HMAC-SHA256 signed notifications with automatic retries
+- **Encryption**: AES-256-GCM for sensitive address data
+- **Demo UI**: Built-in payment interface for testing
+- **Subscription Plans**: Plan management with automatic subscription activation upon confirmed payment
+- **QR Code**: Wallet address QR code generation for easy payment
 
 ---
 
-## Obslugiwane sieci
+## Supported Networks
 
-| Siec | Tokeny | Chain ID | Szacunkowa oplata | Czas potwierdzenia | Min. potwierdzen | Rekomendowana |
-|------|--------|----------|-------------------|---------------------|------------------|---------------|
-| Arbitrum One | USDT, USDC | 42161 | ~$0.01 | ~1 minuta | 3 | Tak |
-| Ethereum | USDT, USDC | 1 | ~$2-5 | ~5 minut | 12 | Nie |
-| Tron | USDT, USDC | - | ~$0.50 | ~3 minuty | 20 | Nie |
+| Network | Tokens | Chain ID | Est. Fee | Confirmation Time | Min. Confirmations | Recommended |
+|---------|--------|----------|----------|--------------------|--------------------|-------------|
+| Arbitrum One | USDT, USDC | 42161 | ~$0.01 | ~1 minute | 3 | Yes |
+| Ethereum | USDT, USDC | 1 | ~$2-5 | ~5 minutes | 12 | No |
+| Tron | USDT, USDC | — | ~$0.50 | ~3 minutes | 20 | No |
 
-### Adresy kontraktow tokenow
+### Token Contract Addresses
 
 **Arbitrum:**
 - USDT: `0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9` (6 decimals)
@@ -64,92 +64,92 @@ Natywna biblioteka do obslugi platnosci kryptowalutowych USDT/USDC na sieciach A
 
 ---
 
-## Architektura systemu
+## System Architecture
 
-### Stos technologiczny
+### Tech Stack
 
 **Frontend:**
-- React 18 z TypeScript
+- React 18 with TypeScript
 - Wouter (routing)
-- TanStack React Query (zarzadzanie stanem serwera)
-- shadcn/ui + Radix UI (komponenty UI)
-- Tailwind CSS (stylowanie)
+- TanStack React Query (server state management)
+- shadcn/ui + Radix UI (UI components)
+- Tailwind CSS (styling)
 - Vite (build tool)
-- qrcode.react (generowanie QR)
+- qrcode.react (QR generation)
 
 **Backend:**
-- Express.js z TypeScript
-- Drizzle ORM z PostgreSQL
-- Alchemy SDK (monitoring EVM)
-- TronGrid API (monitoring Tron)
-- node-cron (zadania cykliczne)
-- fast-xml-parser (parsowanie OFAC XML)
-- Zod (walidacja danych)
+- Express.js with TypeScript
+- Drizzle ORM with PostgreSQL
+- Alchemy SDK (EVM monitoring)
+- TronGrid API (Tron monitoring)
+- node-cron (scheduled jobs)
+- fast-xml-parser (OFAC XML parsing)
+- Zod (data validation)
 
-### Diagram przeplywu platnosci
+### Payment Flow Diagram
 
 ```
-Uzytkownik          Biblioteka              Blockchain         OFAC
-    |                   |                       |               |
-    |-- Inicjuj ---->   |                       |               |
-    |                   |-- Sprawdz OFAC ------>|               |
-    |                   |<-- Czysty/Sankcja ----|               |
-    |                   |                       |               |
-    |<-- Adres + QR ----|                       |               |
-    |                   |                       |               |
-    |-- Wyslij TX ----->|                       |               |
-    |                   |                       |               |
-    |-- Potwierdz ----->|                       |               |
-    |                   |-- Monitoruj --------->|               |
-    |                   |<-- TX znaleziony -----|               |
-    |                   |                       |               |
-    |<-- Potwierdzony --|                       |               |
-    |                   |-- Webhook ----------->|               |
+User                Library                 Blockchain          OFAC
+  |                    |                        |                |
+  |-- Initiate ------->|                        |                |
+  |                    |-- OFAC Check --------->|                |
+  |                    |<-- Clean / Sanctioned--|                |
+  |                    |                        |                |
+  |<-- Address + QR ---|                        |                |
+  |                    |                        |                |
+  |-- Send TX -------->|                        |                |
+  |                    |                        |                |
+  |-- Confirm -------->|                        |                |
+  |                    |-- Monitor ------------>|                |
+  |                    |<-- TX Found -----------|                |
+  |                    |                        |                |
+  |<-- Confirmed ------|                        |                |
+  |                    |-- Webhook ------------>|                |
 ```
 
 ---
 
-## Szybki start
+## Quick Start
 
-### 1. Konfiguracja zmiennych srodowiskowych
+### 1. Configure Environment Variables
 
 ```bash
 DATABASE_URL=postgresql://user:pass@host:5432/dbname
-SESSION_SECRET=twoj-tajny-klucz-min-32-znaki
-ALCHEMY_API_KEY=twoj-klucz-alchemy
-PAYMENT_ADDRESS_EVM=0x...twoj-adres-evm
-PAYMENT_ADDRESS_TRON=T...twoj-adres-tron
+SESSION_SECRET=your-secret-key-minimum-32-characters
+ALCHEMY_API_KEY=your-alchemy-api-key
+PAYMENT_ADDRESS_EVM=0x...your-evm-address
+PAYMENT_ADDRESS_TRON=T...your-tron-address
 ```
 
-### 2. Import i konfiguracja
+### 2. Import and Configure
 
 ```typescript
 import { cryptoPayments } from './lib/cryptoPayments';
 
-// Opcjonalnie: nadpisz adresy platnicze
+// Optional: override payment addresses
 cryptoPayments.configure({
   paymentAddressEvm: '0x...',
   paymentAddressTron: 'T...',
-  webhookUrl: 'https://twoja-domena.com/webhook',
-  webhookSecret: 'twoj-tajny-klucz-webhook',
+  webhookUrl: 'https://your-domain.com/webhook',
+  webhookSecret: 'your-webhook-secret-key',
 });
 ```
 
-### 3. Stworz plan subskrypcyjny
+### 3. Create a Subscription Plan
 
 ```typescript
 await cryptoPayments.createPlan({
   planKey: 'pro-monthly',
-  name: 'Pro Miesiecznie',
-  description: 'Pelny dostep do platformy',
+  name: 'Pro Monthly',
+  description: 'Full platform access',
   price: '19.99',
   currency: 'USDC',
   periodDays: 30,
-  features: ['Wszystkie funkcje', 'Priorytetowe wsparcie'],
+  features: ['All features', 'Priority support'],
 });
 ```
 
-### 4. Zainicjuj platnosc
+### 4. Initiate a Payment
 
 ```typescript
 const payment = await cryptoPayments.initiatePayment({
@@ -157,26 +157,26 @@ const payment = await cryptoPayments.initiatePayment({
   planId: 'plan-uuid',
   network: 'arbitrum',
   token: 'USDC',
-  senderAddress: '0x...adres-nadawcy',
+  senderAddress: '0x...sender-address',
 });
 
-// Jesli adres jest na liscie sankcji OFAC, zostanie
-// rzucony blad: "OFAC_SANCTIONED: Address ... is on the OFAC SDN sanctions list"
+// If the address is on the OFAC sanctions list, an error is thrown:
+// "OFAC_SANCTIONED: Address ... is on the OFAC SDN sanctions list"
 
-console.log('Wyslij platnosc na:', payment.receiverAddress);
-console.log('Kwota:', payment.amount, payment.token);
-console.log('Wygasa za:', payment.expiresIn, 'sekund');
+console.log('Send payment to:', payment.receiverAddress);
+console.log('Amount:', payment.amount, payment.token);
+console.log('Expires in:', payment.expiresIn, 'seconds');
 ```
 
-### 5. Potwierdz wyslanie platnosci
+### 5. Confirm Payment Sent
 
 ```typescript
-// Po wyslaniu transakcji przez uzytkownika
+// After the user sends the transaction
 await cryptoPayments.confirmPaymentSent(payment.paymentId);
-// System automatycznie monitoruje blockchain i potwierdza transakcje
+// The system automatically monitors the blockchain and confirms the transaction
 ```
 
-### 6. Sprawdz status platnosci
+### 6. Check Payment Status
 
 ```typescript
 const status = await cryptoPayments.getPaymentStatus(payment.paymentId);
@@ -186,135 +186,135 @@ console.log('Status:', status.status);
 
 ---
 
-## API biblioteki (natywne)
+## Library API (Native)
 
-### Konfiguracja
+### Configuration
 
 ```typescript
 cryptoPayments.configure({
-  paymentAddressEvm?: string,    // Adres odbioru EVM
-  paymentAddressTron?: string,   // Adres odbioru Tron
-  webhookUrl?: string,           // URL powiadomien webhook
-  webhookSecret?: string,        // Tajny klucz HMAC webhook
+  paymentAddressEvm?: string,    // EVM receiving address
+  paymentAddressTron?: string,   // Tron receiving address
+  webhookUrl?: string,           // Webhook notification URL
+  webhookSecret?: string,        // Webhook HMAC secret key
 });
 ```
 
-### Plany subskrypcyjne
+### Subscription Plans
 
 ```typescript
-// Pobierz wszystkie plany
+// Get all plans
 const plans = await cryptoPayments.getPlans();
 
-// Pobierz plan po ID
+// Get plan by ID
 const plan = await cryptoPayments.getPlan('plan-uuid');
 
-// Pobierz plan po kluczu
+// Get plan by key
 const plan = await cryptoPayments.getPlanByKey('pro-monthly');
 
-// Stworz plan
+// Create a plan
 const newPlan = await cryptoPayments.createPlan({
-  planKey: string,          // Unikalny identyfikator planu
-  name: string,             // Nazwa wyswietlana
-  description?: string,     // Opis planu
-  price: string,            // Cena (np. '19.99')
-  currency?: 'USDT' | 'USDC',  // Waluta (domyslnie USDC)
-  periodDays?: number,      // Okres subskrypcji w dniach
-  features?: string[],      // Lista funkcji planu
+  planKey: string,          // Unique plan identifier
+  name: string,             // Display name
+  description?: string,     // Plan description
+  price: string,            // Price (e.g. '19.99')
+  currency?: 'USDT' | 'USDC',  // Currency (defaults to USDC)
+  periodDays?: number,      // Subscription period in days
+  features?: string[],      // List of plan features
 });
 ```
 
-### Sieci
+### Networks
 
 ```typescript
-// Pobierz wszystkie wspierane sieci
+// Get all supported networks
 const networks = cryptoPayments.getNetworks();
-// Zwraca: { id, name, chainId, tokens, estimatedFee, confirmationTime, recommended }[]
+// Returns: { id, name, chainId, tokens, estimatedFee, confirmationTime, recommended }[]
 
-// Pobierz informacje o konkretnej sieci
+// Get specific network info
 const arbitrum = cryptoPayments.getNetwork('arbitrum');
 ```
 
-### Platnosci
+### Payments
 
 ```typescript
-// Zainicjuj platnosc (z automatycznym sprawdzeniem OFAC)
+// Initiate a payment (includes automatic OFAC check)
 const payment = await cryptoPayments.initiatePayment({
-  userId: string,                              // ID uzytkownika w Twojej aplikacji
-  planId: string,                              // UUID planu
-  network: 'arbitrum' | 'ethereum' | 'tron',   // Siec blockchain
-  token: 'USDT' | 'USDC',                     // Token platnosci
-  senderAddress: string,                        // Adres portfela nadawcy
+  userId: string,                              // User ID in your application
+  planId: string,                              // Plan UUID
+  network: 'arbitrum' | 'ethereum' | 'tron',   // Blockchain network
+  token: 'USDT' | 'USDC',                     // Payment token
+  senderAddress: string,                        // Sender wallet address
 });
-// Zwraca: { paymentId, amount, token, network, receiverAddress, expiresAt, expiresIn }
-// Blad jesli adres na liscie OFAC: throw Error('OFAC_SANCTIONED: ...')
+// Returns: { paymentId, amount, token, network, receiverAddress, expiresAt, expiresIn }
+// Throws if OFAC sanctioned: Error('OFAC_SANCTIONED: ...')
 
-// Potwierdz wyslanie platnosci (uruchamia monitoring blockchain)
+// Confirm payment was sent (starts blockchain monitoring)
 const status = await cryptoPayments.confirmPaymentSent(paymentId);
 
-// Sprawdz status platnosci
+// Check payment status
 const status = await cryptoPayments.getPaymentStatus(paymentId);
-// Zwraca: { paymentId, status, amount, token, network, txHash, confirmedAt }
+// Returns: { paymentId, status, amount, token, network, txHash, confirmedAt }
 
-// Pobierz historie platnosci uzytkownika
+// Get user's payment history
 const history = await cryptoPayments.getPaymentHistory(userId, limit?);
 
-// Anuluj platnosc (tylko w statusie pending/awaiting_confirmation)
+// Cancel a payment (only in pending/awaiting_confirmation status)
 await cryptoPayments.cancelPayment(paymentId);
 ```
 
-### Subskrypcje
+### Subscriptions
 
 ```typescript
-// Pobierz aktywna subskrypcje uzytkownika
+// Get user's active subscription
 const subscription = await cryptoPayments.getCurrentSubscription(userId);
-// Zwraca: { id, planId, status, startsAt, endsAt } | null
+// Returns: { id, planId, status, startsAt, endsAt } | null
 
-// Pobierz historie subskrypcji
+// Get subscription history
 const history = await cryptoPayments.getSubscriptionHistory(userId);
 ```
 
-### Walidacja adresow
+### Address Validation
 
 ```typescript
-// Zwaliduj adres blockchain
+// Validate a blockchain address
 const result = cryptoPayments.validateAddress(address, network);
-// Zwraca: { valid: boolean, error?: string }
+// Returns: { valid: boolean, error?: string }
 ```
 
 ---
 
 ## REST API
 
-Dla aplikacji preferujacych integracje przez REST API:
+For applications that prefer REST API integration:
 
-### Endpointy podstawowe
+### Core Endpoints
 
-| Metoda | Endpoint | Opis |
-|--------|----------|------|
-| GET | `/api/health` | Status zdrowia systemu |
-| GET | `/api/networks` | Lista wspieranych sieci |
-| GET | `/api/plans` | Lista dostepnych planow |
-| POST | `/api/plans` | Stworz nowy plan |
-| POST | `/api/payments` | Zainicjuj nowa platnosc |
-| POST | `/api/payments/:id/confirm` | Potwierdz wyslanie platnosci |
-| GET | `/api/payments/:id/status` | Sprawdz status platnosci |
-| GET | `/api/payments/history/:userId` | Historia platnosci uzytkownika |
-| DELETE | `/api/payments/:id` | Anuluj platnosc |
-| POST | `/api/validate-address` | Zwaliduj adres blockchain |
-| GET | `/api/subscriptions/:userId` | Aktywna subskrypcja uzytkownika |
-| GET | `/api/subscriptions/:userId/history` | Historia subskrypcji |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health` | System health check |
+| GET | `/api/networks` | List supported networks |
+| GET | `/api/plans` | List available plans |
+| POST | `/api/plans` | Create a new plan |
+| POST | `/api/payments` | Initiate a new payment |
+| POST | `/api/payments/:id/confirm` | Confirm payment was sent |
+| GET | `/api/payments/:id/status` | Check payment status |
+| GET | `/api/payments/history/:userId` | User's payment history |
+| DELETE | `/api/payments/:id` | Cancel a payment |
+| POST | `/api/validate-address` | Validate a blockchain address |
+| GET | `/api/subscriptions/:userId` | User's active subscription |
+| GET | `/api/subscriptions/:userId/history` | Subscription history |
 
-### Endpointy OFAC
+### OFAC Endpoints
 
-| Metoda | Endpoint | Opis |
-|--------|----------|------|
-| GET | `/api/ofac/status` | Status systemu OFAC |
-| GET | `/api/ofac/check/:address` | Sprawdz adres wobec listy sankcji |
-| POST | `/api/ofac/update` | Wymus aktualizacje listy OFAC |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/ofac/status` | OFAC system status |
+| GET | `/api/ofac/check/:address` | Check address against sanctions list |
+| POST | `/api/ofac/update` | Force OFAC list update |
 
-### Przyklady uzycia REST API
+### REST API Examples
 
-#### Inicjacja platnosci
+#### Initiate a Payment
 
 ```bash
 curl -X POST http://localhost:5000/api/payments \
@@ -328,7 +328,7 @@ curl -X POST http://localhost:5000/api/payments \
   }'
 ```
 
-Odpowiedz (sukces):
+Success response:
 ```json
 {
   "paymentId": "d290f1ee-6c54-4b01-90e6-d701748f0851",
@@ -341,20 +341,20 @@ Odpowiedz (sukces):
 }
 ```
 
-Odpowiedz (adres sankcjonowany):
+Sanctioned address response:
 ```json
 {
   "error": "OFAC_SANCTIONED: Address 0x... is on the OFAC SDN sanctions list (EXAMPLE ENTITY NAME). Transaction blocked for compliance."
 }
 ```
 
-#### Sprawdzenie adresu OFAC
+#### Check an Address Against OFAC
 
 ```bash
 curl http://localhost:5000/api/ofac/check/0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18
 ```
 
-Odpowiedz:
+Clean address response:
 ```json
 {
   "isSanctioned": false,
@@ -364,7 +364,7 @@ Odpowiedz:
 }
 ```
 
-Odpowiedz (adres na liscie):
+Sanctioned address response:
 ```json
 {
   "isSanctioned": true,
@@ -381,13 +381,13 @@ Odpowiedz (adres na liscie):
 }
 ```
 
-#### Status systemu OFAC
+#### OFAC System Status
 
 ```bash
 curl http://localhost:5000/api/ofac/status
 ```
 
-Odpowiedz:
+Response:
 ```json
 {
   "lastUpdate": "2025-01-01T00:00:00.000Z",
@@ -402,13 +402,13 @@ Odpowiedz:
 }
 ```
 
-#### Wymuszona aktualizacja listy OFAC
+#### Force OFAC List Update
 
 ```bash
 curl -X POST http://localhost:5000/api/ofac/update
 ```
 
-Odpowiedz:
+Response:
 ```json
 {
   "success": true,
@@ -420,24 +420,24 @@ Odpowiedz:
 
 ---
 
-## System OFAC - weryfikacja sankcji
+## OFAC Compliance System
 
-### Opis
+### Overview
 
-System OFAC (Office of Foreign Assets Control) zapewnia zgodnosc z regulacjami sankcyjnymi Departamentu Skarbu USA. Automatycznie pobiera i parsuje oficjalna liste SDN (Specially Designated Nationals and Blocked Persons) w formacie XML bezposrednio ze strony rzadu USA.
+The OFAC (Office of Foreign Assets Control) system ensures compliance with US Treasury Department sanctions regulations. It automatically downloads and parses the official SDN (Specially Designated Nationals and Blocked Persons) list in XML format directly from the US government website.
 
-### Zrodlo danych
+### Data Source
 
 - **URL**: `https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/SDN_ADVANCED.XML`
-- **Format**: XML (SDN_ADVANCED.XML) - okolo 116 MB
-- **Parser**: `fast-xml-parser` z fallbackiem regex dla alternatywnych formatow
+- **Format**: XML (SDN_ADVANCED.XML) — approximately 116 MB
+- **Parser**: `fast-xml-parser` with regex fallback for alternative formats
 
-### Wspierane typy adresow cyfrowych
+### Supported Digital Currency Address Types
 
-System rozpoznaje i ekstrahuje adresy kryptowalutowe oznaczone w XML jako "Digital Currency Address" nastepujacych typow:
+The system recognizes and extracts cryptocurrency addresses labeled as "Digital Currency Address" of the following types:
 
-| Ticker w XML | Typ sieci |
-|-------------|-----------|
+| XML Ticker | Network Type |
+|------------|-------------|
 | XBT | Bitcoin |
 | ETH | Ethereum |
 | TRX | Tron |
@@ -454,99 +454,101 @@ System rozpoznaje i ekstrahuje adresy kryptowalutowe oznaczone w XML jako "Digit
 | ERC20 | Ethereum (ERC-20) |
 | TRC20 | Tron (TRC-20) |
 
-### Przeplyw weryfikacji OFAC
+### OFAC Verification Flow
 
-1. **Przy starcie serwera**: Jesli baza jest pusta, automatycznie pobiera i laduje pelen plik SDN_ADVANCED.XML
-2. **Codziennie o polnocy UTC**: Zaplanowane zadanie cron automatycznie aktualizuje liste sankcji
-3. **Przy kazdej platnosci**: Adres nadawcy jest sprawdzany wobec bazy sankcjonowanych adresow przed inicjacja platnosci
-4. **Na żądanie przez API**: Endpoint `GET /api/ofac/check/:address` pozwala sprawdzic dowolny adres
-5. **Reczna aktualizacja**: Endpoint `POST /api/ofac/update` pozwala wymusic natychmiastowa aktualizacje
+1. **On server startup**: If the database is empty, automatically downloads and loads the full SDN_ADVANCED.XML file
+2. **Daily at midnight UTC**: A scheduled cron job automatically updates the sanctions list
+3. **On every payment**: The sender address is checked against the sanctioned addresses database before payment initiation
+4. **On demand via API**: The `GET /api/ofac/check/:address` endpoint allows checking any address
+5. **Manual update**: The `POST /api/ofac/update` endpoint forces an immediate update
 
-### Integracja z przeplywem platnosci
+### Integration with Payment Flow
 
-Weryfikacja OFAC jest wbudowana bezposrednio w metode `cryptoPayments.initiatePayment()`. Przeplyw:
+OFAC verification is built directly into the `cryptoPayments.initiatePayment()` method. The flow:
 
-1. Walidacja formatu adresu (EVM lub Tron)
-2. **Sprawdzenie OFAC** - porownanie adresu z baza sankcjonowanych adresow
-3. Jesli adres jest na liscie -> rzucenie bledu `OFAC_SANCTIONED` z nazwa podmiotu sankcjonowanego
-4. Jesli adres jest czysty -> kontynuacja tworzenia platnosci
+1. Address format validation (EVM or Tron)
+2. **OFAC check** — compare address against the sanctioned addresses database
+3. If the address is on the list → throw `OFAC_SANCTIONED` error with the sanctioned entity name
+4. If the address is clean → continue with payment creation
 
-### Frontend - wskaznik OFAC w czasie rzeczywistym
+### Frontend — Real-Time OFAC Indicator
 
-Interfejs platnosci wyswietla status sprawdzania OFAC w czasie rzeczywistym:
+The payment interface displays OFAC check status in real time:
 
-- **Idle**: Brak wyswietlania (adres za krotki lub nie wpisany)
-- **Checking**: Animowana ikona ladowania (debounce 500ms po ostatnim nacisnięciu klawisza)
-- **Clean**: Zielona ikona tarczy z tekstem "OFAC compliance check passed"
-- **Sanctioned**: Czerwona ikona tarczy z pelnym komunikatem ostrzezenia i zablokowanym przyciskiem "Continue"
+- **Idle**: No display (address too short or not entered)
+- **Checking**: Animated loading spinner (500ms debounce after last keystroke)
+- **Clean**: Green shield icon with "OFAC compliance check passed" text
+- **Sanctioned**: Red shield icon with full warning message and disabled "Continue" button
 
-### Tabele bazodanowe OFAC
+### OFAC Database Tables
 
 **ofac_sanctioned_addresses:**
-| Kolumna | Typ | Opis |
-|---------|-----|------|
-| id | VARCHAR(36) | UUID klucz glowny |
-| address | VARCHAR(256) | Oryginalny adres blockchain |
-| address_lower | VARCHAR(256) | Znormalizowany adres (lowercase) - indeksowany |
-| address_type | VARCHAR(50) | Typ sieci (ethereum, bitcoin, tron, itp.) |
-| sdn_name | TEXT | Nazwa podmiotu na liscie SDN |
-| sdn_id | VARCHAR(50) | ID podmiotu w systemie OFAC |
-| source | VARCHAR(50) | Zrodlo danych (domyslnie 'OFAC_SDN') |
-| created_at | TIMESTAMP | Data dodania do bazy |
-| last_seen_at | TIMESTAMP | Data ostatniego potwierdzenia obecnosci na liscie |
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | VARCHAR(36) | UUID primary key |
+| address | VARCHAR(256) | Original blockchain address |
+| address_lower | VARCHAR(256) | Normalized address (lowercase) — indexed |
+| address_type | VARCHAR(50) | Network type (ethereum, bitcoin, tron, etc.) |
+| sdn_name | TEXT | SDN entity name |
+| sdn_id | VARCHAR(50) | OFAC entity ID |
+| source | VARCHAR(50) | Data source (default 'OFAC_SDN') |
+| created_at | TIMESTAMP | Date added to database |
+| last_seen_at | TIMESTAMP | Last confirmed on the list |
 
 **ofac_update_log:**
-| Kolumna | Typ | Opis |
-|---------|-----|------|
-| id | VARCHAR(36) | UUID klucz glowny |
-| total_addresses | INTEGER | Calkowita liczba adresow po aktualizacji |
-| new_addresses | INTEGER | Liczba nowych adresow |
-| removed_addresses | INTEGER | Liczba usunietych adresow |
-| source_url | TEXT | URL zrodla danych |
-| success | BOOLEAN | Czy aktualizacja sie powiodla |
-| error_message | TEXT | Komunikat bledu (jesli wystapil) |
-| created_at | TIMESTAMP | Data aktualizacji |
 
-### Parsowanie XML
+| Column | Type | Description |
+|--------|------|-------------|
+| id | VARCHAR(36) | UUID primary key |
+| total_addresses | INTEGER | Total addresses after update |
+| new_addresses | INTEGER | New addresses added |
+| removed_addresses | INTEGER | Addresses removed |
+| source_url | TEXT | Data source URL |
+| success | BOOLEAN | Whether update succeeded |
+| error_message | TEXT | Error message (if any) |
+| created_at | TIMESTAMP | Update timestamp |
 
-System stosuje dwuetapowe parsowanie:
+### XML Parsing
 
-1. **Parsowanie strukturalne** (fast-xml-parser): Analizuje strukture XML, szuka wpisow `sdnEntry`, ich `idList` i `features` zawierajacych adresy cyfrowych walut
-2. **Parsowanie regex (fallback)**: Jesli parsowanie strukturalne nie znajdzie adresow, stosuje wyrazenia regularne do wykrywania adresow w formacie:
+The system uses a two-stage parsing approach:
+
+1. **Structural parsing** (fast-xml-parser): Analyzes the XML structure, looking for `sdnEntry` entries, their `idList` and `features` containing digital currency addresses
+2. **Regex parsing (fallback)**: If structural parsing finds no addresses, regular expressions are used to detect addresses in these formats:
    - EVM: `0x[a-fA-F0-9]{40}`
    - Tron: `T[a-zA-Z0-9]{33}`
    - Bitcoin: `[13][a-km-zA-HJ-NP-Z1-9]{25,34}`
    - Bitcoin Bech32: `bc1[a-zA-HJ-NP-Z0-9]{25,90}`
 
-### Zabezpieczenia przed podwojnym uruchomieniem
+### Concurrency Protection
 
-Serwis OFAC posiada flage `isUpdating` ktora zapobiega rownoczesnemu uruchamieniu wielu procesow aktualizacji. Jesli aktualizacja jest juz w toku, kolejne zadanie zwroci blad bez przerywania biezacej operacji.
+The OFAC service has an `isUpdating` flag that prevents multiple update processes from running simultaneously. If an update is already in progress, subsequent requests return an error without interrupting the current operation.
 
 ---
 
-## System webhookow
+## Webhook System
 
-### Konfiguracja
+### Configuration
 
 ```typescript
 cryptoPayments.configure({
-  webhookUrl: 'https://twoja-domena.com/webhook',
-  webhookSecret: 'twoj-tajny-klucz',
+  webhookUrl: 'https://your-domain.com/webhook',
+  webhookSecret: 'your-secret-key',
 });
 ```
 
-### Zdarzenia
+### Events
 
-| Zdarzenie | Opis |
-|-----------|------|
-| `payment.created` | Platnosc zainicjowana |
-| `payment.confirmed` | Platnosc potwierdzona na blockchain |
-| `payment.expired` | Platnosc wygasla (timeout 30 minut) |
-| `payment.failed` | Platnosc nieudana |
-| `subscription.activated` | Subskrypcja aktywowana/odnowiona |
-| `subscription.expired` | Subskrypcja wygasla |
+| Event | Description |
+|-------|-------------|
+| `payment.created` | Payment initiated |
+| `payment.confirmed` | Payment confirmed on blockchain |
+| `payment.expired` | Payment expired (30-minute timeout) |
+| `payment.failed` | Payment failed |
+| `subscription.activated` | Subscription activated/renewed |
+| `subscription.expired` | Subscription expired |
 
-### Format payloadu
+### Payload Format
 
 ```json
 {
@@ -563,14 +565,14 @@ cryptoPayments.configure({
 }
 ```
 
-### Naglowki webhook
+### Webhook Headers
 
-| Naglowek | Opis |
-|----------|------|
-| `x-webhook-signature` | Podpis HMAC-SHA256 payloadu |
+| Header | Description |
+|--------|-------------|
+| `x-webhook-signature` | HMAC-SHA256 payload signature |
 | `Content-Type` | `application/json` |
 
-### Weryfikacja podpisu webhook
+### Signature Verification
 
 ```typescript
 import crypto from 'crypto';
@@ -587,392 +589,392 @@ function verifyWebhook(payload: string, signature: string, secret: string): bool
   );
 }
 
-// Uzycie w Express
+// Usage in Express
 app.post('/webhook', (req, res) => {
   const isValid = verifyWebhook(
     JSON.stringify(req.body),
     req.headers['x-webhook-signature'] as string,
-    'twoj-tajny-klucz'
+    'your-secret-key'
   );
   
   if (!isValid) {
     return res.status(401).json({ error: 'Invalid signature' });
   }
   
-  // Przetwarzaj zdarzenie...
+  // Process the event...
   res.json({ received: true });
 });
 ```
 
-### Ponowne proby (retry)
+### Retry Policy
 
-- Automatyczne ponowne proby z wykladniczym opoznieniem (exponential backoff)
-- Zadanie cron co 2 minuty sprawdza nieudane webhooks
-- Rejestrowanie statusow dostawy w tabeli `webhook_logs`
+- Automatic retries with exponential backoff
+- Cron job every 2 minutes checks for failed webhooks
+- Delivery statuses logged in the `webhook_logs` table
 
 ---
 
-## Monitoring blockchain
+## Blockchain Monitoring
 
-### Architektura
+### Architecture
 
-System monitoringu sklada sie z dwoch serwisow:
+The monitoring system consists of two services:
 
 **EVM Blockchain Service** (`evmBlockchainService.ts`):
-- Uzywa Alchemy SDK do monitorowania sieci Arbitrum i Ethereum
-- Sprawdza transfery tokenow ERC-20 (USDT/USDC) na adres odbiorcy
-- Weryfikuje kwote, adres nadawcy i token
-- Wymaga zmiennej `ALCHEMY_API_KEY`
+- Uses Alchemy SDK to monitor Arbitrum and Ethereum networks
+- Checks ERC-20 token transfers (USDT/USDC) to the receiver address
+- Verifies amount, sender address, and token
+- Requires the `ALCHEMY_API_KEY` environment variable
 
 **Tron Blockchain Service** (`tronBlockchainService.ts`):
-- Uzywa TronGrid API do monitorowania sieci Tron
-- Sprawdza transfery tokenow TRC-20 na adres odbiorcy
-- Opcjonalnie uzywa `TRONGRID_API_KEY` dla wyzszych limitow
+- Uses TronGrid API to monitor the Tron network
+- Checks TRC-20 token transfers to the receiver address
+- Optionally uses `TRONGRID_API_KEY` for higher rate limits
 
-### Przeplyw monitoringu
+### Monitoring Flow
 
-1. **Kolejka monitoringu**: Platnosci w statusie `awaiting_confirmation` sa dodawane do kolejki
-2. **Polling**: System odpytuje blockchain co 5 sekund dla kazdej platnosci w kolejce
-3. **Dopasowanie transakcji**: Sprawdza czy transakcja pasuje pod wzgledem kwoty, nadawcy i tokenu
-4. **Potwierdzenie**: Po osiagnieciu wymaganej liczby potwierdzen, platnosc zmienia status na `confirmed`
-5. **Aktywacja subskrypcji**: Automatyczna aktywacja subskrypcji po potwierdzeniu platnosci
-6. **Webhook**: Wysylanie powiadomienia o potwierdzeniu
+1. **Monitoring queue**: Payments in `awaiting_confirmation` status are added to the queue
+2. **Polling**: The system polls the blockchain every 5 seconds for each payment in the queue
+3. **Transaction matching**: Checks whether a transaction matches in terms of amount, sender, and token
+4. **Confirmation**: After reaching the required number of confirmations, the payment status changes to `confirmed`
+5. **Subscription activation**: Automatic subscription activation after payment confirmation
+6. **Webhook**: Confirmation notification sent to the configured URL
 
-### Wykrywanie transakcji
+### Transaction Detection
 
-System szuka transferow tokenow ERC-20/TRC-20 spelniajacych wszystkie kryteria:
-- Adres docelowy = skonfigurowany adres odbiorcy
-- Token = wybrany token (USDT/USDC)
-- Kwota = dokladna kwota platnosci
-- Adres nadawcy = zaszyfrowany adres nadawcy (porownanie przez HMAC)
-
----
-
-## Zadania cykliczne (Scheduler)
-
-System uruchamia 5 zadan cyklicznych:
-
-| Zadanie | Harmonogram | Opis |
-|---------|-------------|------|
-| Sprawdzanie nowych platnosci | Co 1 minute | Dodaje nowe platnosci do kolejki monitoringu blockchain |
-| Wygaszanie platnosci | Co 5 minut | Oznacza platnosci starsze niz 30 minut jako `expired` |
-| Wygaszanie subskrypcji | Co 1 godzine | Sprawdza i wygasza subskrypcje po dacie zakonczenia |
-| Ponowne proby webhookow | Co 2 minuty | Powtarza nieudane dostawy webhookow |
-| **Aktualizacja OFAC** | **Codziennie o 00:00 UTC** | **Pobiera i parsuje aktualna liste SDN z US Treasury** |
+The system looks for ERC-20/TRC-20 token transfers that meet all criteria:
+- Destination address = configured receiver address
+- Token = selected token (USDT/USDC)
+- Amount = exact payment amount
+- Sender address = encrypted sender address (compared via HMAC)
 
 ---
 
-## Bezpieczenstwo i szyfrowanie
+## Scheduled Jobs
 
-### Szyfrowanie adresow nadawcow
+The system runs 5 scheduled jobs:
 
-- **Algorytm**: AES-256-GCM (Galois/Counter Mode)
-- **Wektor inicjalizacji (IV)**: 16 losowych bajtow generowanych dla kazdego szyfrowania
-- **Tag uwierzytelniania**: 16 bajtow (zapewnia integralnosc danych)
-- **Klucz szyfrujacy**: Derywowany z `SESSION_SECRET` przez `scrypt` z solem `payment-salt`
-- **Format przechowywania**: `iv_hex:auth_tag_hex:encrypted_hex`
+| Job | Schedule | Description |
+|-----|----------|-------------|
+| Check new payments | Every 1 minute | Adds new payments to the blockchain monitoring queue |
+| Expire payments | Every 5 minutes | Marks payments older than 30 minutes as `expired` |
+| Expire subscriptions | Every 1 hour | Checks and expires subscriptions past their end date |
+| Retry webhooks | Every 2 minutes | Retries failed webhook deliveries |
+| **OFAC update** | **Daily at 00:00 UTC** | **Downloads and parses the current SDN list from US Treasury** |
 
-### Dopasowanie adresow (HMAC)
+---
 
-- Adresy nadawcow sa hashowane przez HMAC-SHA256 do bezpiecznego wyszukiwania
-- Klucz HMAC derywowany z `SESSION_SECRET`
-- Umozliwia szybkie porownanie adresow bez odszyfrowania
+## Security & Encryption
 
-### Podpisy webhookow
+### Sender Address Encryption
 
-- HMAC-SHA256 z osobnym tajnym kluczem webhook
-- Weryfikacja z uzyciem `crypto.timingSafeEqual()` (ochrona przed atakami timing)
+- **Algorithm**: AES-256-GCM (Galois/Counter Mode)
+- **Initialization Vector (IV)**: 16 random bytes generated for each encryption
+- **Authentication Tag**: 16 bytes (ensures data integrity)
+- **Encryption Key**: Derived from `SESSION_SECRET` via `scrypt` with `payment-salt` salt
+- **Storage Format**: `iv_hex:auth_tag_hex:encrypted_hex`
 
-### Timeout platnosci
+### Address Matching (HMAC)
 
-- Kazda platnosc wygasa po 30 minutach od inicjacji
-- Wygasle platnosci sa automatycznie oznaczane przez scheduler
-- Zapobiega zaleganiu nieaktywnych platnosci w systemie
+- Sender addresses are hashed via HMAC-SHA256 for secure lookup
+- HMAC key derived from `SESSION_SECRET`
+- Enables fast address comparison without decryption
+
+### Webhook Signatures
+
+- HMAC-SHA256 with a separate webhook secret key
+- Verification using `crypto.timingSafeEqual()` (protection against timing attacks)
+
+### Payment Timeout
+
+- Every payment expires 30 minutes after initiation
+- Expired payments are automatically marked by the scheduler
+- Prevents stale payments from lingering in the system
 
 ### OFAC Compliance
 
-- Adres nadawcy jest sprawdzany wobec oficjalnej listy sankcji SDN
-- Lista jest aktualizowana codziennie o polnocy UTC
-- Platnosci z sankcjonowanych adresow sa automatycznie blokowane
-- Frontend wyswietla ostrzezenie w czasie rzeczywistym
+- Sender address is checked against the official SDN sanctions list
+- List is updated daily at midnight UTC
+- Payments from sanctioned addresses are automatically blocked
+- Frontend displays real-time warnings
 
 ---
 
-## Baza danych - schemat
+## Database Schema
 
-### Tabela: tenants
-Zarzadzanie konfiguracją (pojedynczy tenant "default" w trybie biblioteki natywnej).
+### Table: tenants
+Configuration management (single "default" tenant in native library mode).
 
-| Kolumna | Typ | Opis |
-|---------|-----|------|
+| Column | Type | Description |
+|--------|------|-------------|
 | id | VARCHAR(36) PK | UUID |
-| name | TEXT | Nazwa tenanta |
-| api_key | VARCHAR(64) | Klucz API (legacy) |
-| api_key_hash | VARCHAR(128) | Hash klucza API |
-| webhook_url | TEXT | URL webhook |
-| webhook_secret | VARCHAR(64) | Tajny klucz webhook |
-| payment_address_evm | VARCHAR(42) | Adres EVM |
-| payment_address_tron | VARCHAR(34) | Adres Tron |
-| is_active | BOOLEAN | Czy aktywny |
-| created_at | TIMESTAMP | Data utworzenia |
-| updated_at | TIMESTAMP | Data aktualizacji |
+| name | TEXT | Tenant name |
+| api_key | VARCHAR(64) | API key (legacy) |
+| api_key_hash | VARCHAR(128) | API key hash |
+| webhook_url | TEXT | Webhook URL |
+| webhook_secret | VARCHAR(64) | Webhook secret key |
+| payment_address_evm | VARCHAR(42) | EVM address |
+| payment_address_tron | VARCHAR(34) | Tron address |
+| is_active | BOOLEAN | Whether active |
+| created_at | TIMESTAMP | Creation date |
+| updated_at | TIMESTAMP | Last update date |
 
-### Tabela: plans
-Plany subskrypcyjne.
+### Table: plans
+Subscription plans.
 
-| Kolumna | Typ | Opis |
-|---------|-----|------|
+| Column | Type | Description |
+|--------|------|-------------|
 | id | VARCHAR(36) PK | UUID |
-| tenant_id | VARCHAR(36) FK | Referencja do tenants |
-| plan_key | VARCHAR(50) | Unikalny klucz planu |
-| name | TEXT | Nazwa planu |
-| description | TEXT | Opis |
-| price | DECIMAL(18,6) | Cena |
-| currency | ENUM | USDT lub USDC |
-| period_days | INTEGER | Okres w dniach |
-| features | TEXT[] | Lista funkcji |
-| is_active | BOOLEAN | Czy aktywny |
-| created_at | TIMESTAMP | Data utworzenia |
+| tenant_id | VARCHAR(36) FK | Reference to tenants |
+| plan_key | VARCHAR(50) | Unique plan key |
+| name | TEXT | Plan name |
+| description | TEXT | Description |
+| price | DECIMAL(18,6) | Price |
+| currency | ENUM | USDT or USDC |
+| period_days | INTEGER | Period in days |
+| features | TEXT[] | Feature list |
+| is_active | BOOLEAN | Whether active |
+| created_at | TIMESTAMP | Creation date |
 
-### Tabela: payments
-Rejestr platnosci.
+### Table: payments
+Payment records.
 
-| Kolumna | Typ | Opis |
-|---------|-----|------|
+| Column | Type | Description |
+|--------|------|-------------|
 | id | VARCHAR(36) PK | UUID |
-| tenant_id | VARCHAR(36) FK | Referencja do tenants |
-| external_user_id | VARCHAR(255) | ID uzytkownika w zewnetrznym systemie |
-| plan_id | VARCHAR(36) FK | Referencja do plans |
-| amount | DECIMAL(18,6) | Kwota |
-| token | ENUM | USDT lub USDC |
+| tenant_id | VARCHAR(36) FK | Reference to tenants |
+| external_user_id | VARCHAR(255) | User ID in external system |
+| plan_id | VARCHAR(36) FK | Reference to plans |
+| amount | DECIMAL(18,6) | Amount |
+| token | ENUM | USDT or USDC |
 | network | ENUM | arbitrum, ethereum, tron |
-| sender_address_encrypted | TEXT | Zaszyfrowany adres nadawcy (AES-256-GCM) |
-| sender_address_hmac | VARCHAR(128) | HMAC adresu nadawcy |
-| receiver_address | VARCHAR(100) | Adres odbiorcy |
+| sender_address_encrypted | TEXT | Encrypted sender address (AES-256-GCM) |
+| sender_address_hmac | VARCHAR(128) | Sender address HMAC |
+| receiver_address | VARCHAR(100) | Receiver address |
 | status | ENUM | pending, awaiting_confirmation, confirmed, expired, failed, cancelled |
-| tx_hash | VARCHAR(100) | Hash transakcji blockchain |
-| tx_confirmed_at | TIMESTAMP | Data potwierdzenia |
-| confirmations | INTEGER | Liczba potwierdzen |
-| error_message | TEXT | Komunikat bledu |
-| retry_count | INTEGER | Liczba prob |
-| created_at | TIMESTAMP | Data utworzenia |
-| updated_at | TIMESTAMP | Data aktualizacji |
-| expires_at | TIMESTAMP | Data wygasniecia |
+| tx_hash | VARCHAR(100) | Blockchain transaction hash |
+| tx_confirmed_at | TIMESTAMP | Confirmation date |
+| confirmations | INTEGER | Number of confirmations |
+| error_message | TEXT | Error message |
+| retry_count | INTEGER | Number of retries |
+| created_at | TIMESTAMP | Creation date |
+| updated_at | TIMESTAMP | Last update date |
+| expires_at | TIMESTAMP | Expiration date |
 
-### Tabela: subscriptions
-Subskrypcje uzytkownikow.
+### Table: subscriptions
+User subscriptions.
 
-| Kolumna | Typ | Opis |
-|---------|-----|------|
+| Column | Type | Description |
+|--------|------|-------------|
 | id | VARCHAR(36) PK | UUID |
-| tenant_id | VARCHAR(36) FK | Referencja do tenants |
-| external_user_id | VARCHAR(255) | ID uzytkownika |
-| plan_id | VARCHAR(36) FK | Referencja do plans |
-| payment_id | VARCHAR(36) FK | Referencja do payments |
+| tenant_id | VARCHAR(36) FK | Reference to tenants |
+| external_user_id | VARCHAR(255) | User ID |
+| plan_id | VARCHAR(36) FK | Reference to plans |
+| payment_id | VARCHAR(36) FK | Reference to payments |
 | status | ENUM | active, expired, cancelled |
-| starts_at | TIMESTAMP | Poczatek subskrypcji |
-| ends_at | TIMESTAMP | Koniec subskrypcji |
-| created_at | TIMESTAMP | Data utworzenia |
-| updated_at | TIMESTAMP | Data aktualizacji |
+| starts_at | TIMESTAMP | Subscription start |
+| ends_at | TIMESTAMP | Subscription end |
+| created_at | TIMESTAMP | Creation date |
+| updated_at | TIMESTAMP | Last update date |
 
-### Tabela: webhook_logs
-Rejestr dostarczeń webhookow.
+### Table: webhook_logs
+Webhook delivery records.
 
-| Kolumna | Typ | Opis |
-|---------|-----|------|
+| Column | Type | Description |
+|--------|------|-------------|
 | id | VARCHAR(36) PK | UUID |
-| tenant_id | VARCHAR(36) FK | Referencja do tenants |
-| event | ENUM | Typ zdarzenia |
-| payload | TEXT | Tresc payloadu |
-| url | TEXT | URL docelowy |
-| response_status | INTEGER | Kod odpowiedzi HTTP |
-| response_body | TEXT | Tresc odpowiedzi |
-| success | BOOLEAN | Czy dostarczono pomyslnie |
-| retry_count | INTEGER | Liczba prob |
-| next_retry_at | TIMESTAMP | Nastepna proba |
-| created_at | TIMESTAMP | Data utworzenia |
+| tenant_id | VARCHAR(36) FK | Reference to tenants |
+| event | ENUM | Event type |
+| payload | TEXT | Payload content |
+| url | TEXT | Destination URL |
+| response_status | INTEGER | HTTP response code |
+| response_body | TEXT | Response content |
+| success | BOOLEAN | Whether delivered successfully |
+| retry_count | INTEGER | Number of retries |
+| next_retry_at | TIMESTAMP | Next retry time |
+| created_at | TIMESTAMP | Creation date |
 
-### Tabela: ofac_sanctioned_addresses
-Sankcjonowane adresy kryptowalutowe z listy SDN OFAC.
+### Table: ofac_sanctioned_addresses
+Sanctioned cryptocurrency addresses from the OFAC SDN list.
 
-| Kolumna | Typ | Opis |
-|---------|-----|------|
+| Column | Type | Description |
+|--------|------|-------------|
 | id | VARCHAR(36) PK | UUID |
-| address | VARCHAR(256) | Oryginalny adres |
-| address_lower | VARCHAR(256) | Znormalizowany (lowercase) - indeksowany |
-| address_type | VARCHAR(50) | Typ sieci |
-| sdn_name | TEXT | Nazwa podmiotu SDN |
-| sdn_id | VARCHAR(50) | ID podmiotu OFAC |
-| source | VARCHAR(50) | Zrodlo (OFAC_SDN) |
-| created_at | TIMESTAMP | Data dodania |
-| last_seen_at | TIMESTAMP | Ostatnie potwierdzenie |
+| address | VARCHAR(256) | Original address |
+| address_lower | VARCHAR(256) | Normalized (lowercase) — indexed |
+| address_type | VARCHAR(50) | Network type |
+| sdn_name | TEXT | SDN entity name |
+| sdn_id | VARCHAR(50) | OFAC entity ID |
+| source | VARCHAR(50) | Source (OFAC_SDN) |
+| created_at | TIMESTAMP | Date added |
+| last_seen_at | TIMESTAMP | Last confirmed on list |
 
-### Tabela: ofac_update_log
-Historia aktualizacji listy OFAC.
+### Table: ofac_update_log
+OFAC list update history.
 
-| Kolumna | Typ | Opis |
-|---------|-----|------|
+| Column | Type | Description |
+|--------|------|-------------|
 | id | VARCHAR(36) PK | UUID |
-| total_addresses | INTEGER | Calkowita liczba adresow |
-| new_addresses | INTEGER | Nowe adresy |
-| removed_addresses | INTEGER | Usuniete adresy |
-| source_url | TEXT | URL zrodla |
-| success | BOOLEAN | Powodzenie |
-| error_message | TEXT | Blad (jesli wystapil) |
-| created_at | TIMESTAMP | Data aktualizacji |
+| total_addresses | INTEGER | Total address count |
+| new_addresses | INTEGER | New addresses |
+| removed_addresses | INTEGER | Removed addresses |
+| source_url | TEXT | Source URL |
+| success | BOOLEAN | Success status |
+| error_message | TEXT | Error (if any) |
+| created_at | TIMESTAMP | Update timestamp |
 
-### Indeksy
+### Indexes
 
-- `idx_ofac_address_lower` - szybkie wyszukiwanie adresow OFAC
-- `idx_ofac_address_type` - filtrowanie po typie sieci
-- `idx_payments_status` - filtrowanie platnosci po statusie
-- `idx_payments_sender_hmac` - wyszukiwanie po HMAC adresu
-- `idx_payments_tenant_user` - platnosci uzytkownika
-- `idx_payments_expires` - wygasajace platnosci
-- `idx_payments_tx_hash` - wyszukiwanie po hash transakcji
-- `idx_subscriptions_tenant_user` - subskrypcje uzytkownika
-- `idx_subscriptions_status` - filtrowanie subskrypcji
-- `idx_subscriptions_ends_at` - wygasajace subskrypcje
+- `idx_ofac_address_lower` — fast OFAC address lookup
+- `idx_ofac_address_type` — filtering by network type
+- `idx_payments_status` — filtering payments by status
+- `idx_payments_sender_hmac` — lookup by address HMAC
+- `idx_payments_tenant_user` — user payments
+- `idx_payments_expires` — expiring payments
+- `idx_payments_tx_hash` — lookup by transaction hash
+- `idx_subscriptions_tenant_user` — user subscriptions
+- `idx_subscriptions_status` — subscription filtering
+- `idx_subscriptions_ends_at` — expiring subscriptions
 
 ---
 
-## Zmienne srodowiskowe
+## Environment Variables
 
-| Zmienna | Opis | Wymagana |
-|---------|------|----------|
-| `DATABASE_URL` | Connection string PostgreSQL | Tak |
-| `SESSION_SECRET` | Tajny klucz do szyfrowania i derywacji kluczy | Tak |
-| `ALCHEMY_API_KEY` | Klucz API Alchemy do monitoringu EVM (Arbitrum, Ethereum) | Tak |
-| `PAYMENT_ADDRESS_EVM` | Domyslny adres odbioru platnosci EVM (0x...) | Tak |
-| `PAYMENT_ADDRESS_TRON` | Domyslny adres odbioru platnosci Tron (T...) | Tak |
-| `TRONGRID_API_KEY` | Klucz API TronGrid (opcjonalny, dla wyzszych limitow) | Nie |
-| `WEBHOOK_URL` | URL do wysylania powiadomien webhook | Nie |
-| `WEBHOOK_SECRET` | Tajny klucz do podpisywania webhookow | Nie |
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `DATABASE_URL` | PostgreSQL connection string | Yes |
+| `SESSION_SECRET` | Secret key for encryption and key derivation | Yes |
+| `ALCHEMY_API_KEY` | Alchemy API key for EVM monitoring (Arbitrum, Ethereum) | Yes |
+| `PAYMENT_ADDRESS_EVM` | Default EVM payment receiver address (0x...) | Yes |
+| `PAYMENT_ADDRESS_TRON` | Default Tron payment receiver address (T...) | Yes |
+| `TRONGRID_API_KEY` | TronGrid API key (optional, for higher rate limits) | No |
+| `WEBHOOK_URL` | URL for webhook notifications | No |
+| `WEBHOOK_SECRET` | Secret key for webhook signing | No |
 
 ---
 
-## Struktura projektu
+## Project Structure
 
 ```
 /
-├── client/                          # Frontend React
+├── client/                          # React Frontend
 │   └── src/
-│       ├── components/ui/           # Komponenty shadcn/ui
+│       ├── components/ui/           # shadcn/ui components
 │       ├── hooks/                   # Custom hooks
 │       ├── lib/                     # Utilities (queryClient, utils)
 │       ├── pages/
-│       │   ├── home.tsx             # Strona glowna
-│       │   ├── payment.tsx          # Demo UI platnosci (z OFAC check)
-│       │   ├── admin.tsx            # Panel administracyjny
-│       │   └── not-found.tsx        # Strona 404
-│       ├── App.tsx                  # Glowny komponent z routingiem
-│       └── main.tsx                 # Punkt wejscia
+│       │   ├── home.tsx             # Home page
+│       │   ├── payment.tsx          # Payment demo UI (with OFAC check)
+│       │   ├── admin.tsx            # Admin panel
+│       │   └── not-found.tsx        # 404 page
+│       ├── App.tsx                  # Main component with routing
+│       └── main.tsx                 # Entry point
 │
-├── server/                          # Backend Express
+├── server/                          # Express Backend
 │   ├── config/
-│   │   └── networks.ts              # Konfiguracja sieci i tokenow
+│   │   └── networks.ts              # Network and token configuration
 │   ├── controllers/
-│   │   ├── paymentController.ts     # Kontroler platnosci
-│   │   ├── subscriptionController.ts # Kontroler subskrypcji
-│   │   └── tenantController.ts      # Kontroler tenantow
+│   │   ├── paymentController.ts     # Payment controller
+│   │   ├── subscriptionController.ts # Subscription controller
+│   │   └── tenantController.ts      # Tenant controller
 │   ├── jobs/
-│   │   └── paymentScheduler.ts      # Zadania cykliczne (5 jobow wlacznie z OFAC)
+│   │   └── paymentScheduler.ts      # Scheduled jobs (5 jobs including OFAC)
 │   ├── lib/
-│   │   └── cryptoPayments.ts        # Glowna klasa biblioteki (z OFAC check)
+│   │   └── cryptoPayments.ts        # Main library class (with OFAC check)
 │   ├── middleware/
-│   │   ├── apiAuth.ts               # Middleware autoryzacji (legacy)
+│   │   ├── apiAuth.ts               # Auth middleware (legacy)
 │   │   └── rateLimit.ts             # Rate limiting
 │   ├── services/
-│   │   ├── blockchainMonitorService.ts  # Monitoring blockchain
-│   │   ├── evmBlockchainService.ts      # Serwis EVM (Alchemy)
-│   │   ├── tronBlockchainService.ts     # Serwis Tron (TronGrid)
-│   │   ├── ofacService.ts               # Serwis OFAC (SDN list)
-│   │   ├── paymentService.ts            # Logika platnosci
-│   │   ├── subscriptionService.ts       # Logika subskrypcji
-│   │   ├── tenantService.ts             # Logika tenantow
-│   │   └── webhookService.ts            # Logika webhookow
+│   │   ├── blockchainMonitorService.ts  # Blockchain monitoring
+│   │   ├── evmBlockchainService.ts      # EVM service (Alchemy)
+│   │   ├── tronBlockchainService.ts     # Tron service (TronGrid)
+│   │   ├── ofacService.ts               # OFAC service (SDN list)
+│   │   ├── paymentService.ts            # Payment logic
+│   │   ├── subscriptionService.ts       # Subscription logic
+│   │   ├── tenantService.ts             # Tenant logic
+│   │   └── webhookService.ts            # Webhook logic
 │   ├── utils/
-│   │   ├── addressValidation.ts     # Walidacja adresow EVM/Tron
-│   │   └── encryption.ts           # Szyfrowanie AES-256-GCM, HMAC, podpisy
-│   ├── db.ts                        # Polaczenie z baza danych
-│   ├── index.ts                     # Punkt wejscia serwera (z inicjalizacja OFAC)
-│   ├── routes.ts                    # Definicje endpointow API (wlacznie z OFAC)
-│   ├── seed.ts                      # Dane poczatkowe (domyslny tenant, plany)
-│   ├── storage.ts                   # Warstwa abstrakcji bazy danych
-│   ├── static.ts                    # Serwowanie plikow statycznych
-│   └── vite.ts                      # Konfiguracja Vite dev server
+│   │   ├── addressValidation.ts     # EVM/Tron address validation
+│   │   └── encryption.ts           # AES-256-GCM encryption, HMAC, signatures
+│   ├── db.ts                        # Database connection
+│   ├── index.ts                     # Server entry point (with OFAC initialization)
+│   ├── routes.ts                    # API endpoint definitions (including OFAC)
+│   ├── seed.ts                      # Seed data (default tenant, plans)
+│   ├── storage.ts                   # Database abstraction layer
+│   ├── static.ts                    # Static file serving
+│   └── vite.ts                      # Vite dev server configuration
 │
 ├── shared/
-│   └── schema.ts                    # Schemat bazy (Drizzle ORM) + typy + OFAC tabele
+│   └── schema.ts                    # Database schema (Drizzle ORM) + types + OFAC tables
 │
-├── drizzle.config.ts                # Konfiguracja Drizzle Kit
-├── package.json                     # Zaleznosci projektu
-├── tailwind.config.ts               # Konfiguracja Tailwind CSS
-├── tsconfig.json                    # Konfiguracja TypeScript
-└── vite.config.ts                   # Konfiguracja Vite
+├── drizzle.config.ts                # Drizzle Kit configuration
+├── package.json                     # Project dependencies
+├── tailwind.config.ts               # Tailwind CSS configuration
+├── tsconfig.json                    # TypeScript configuration
+└── vite.config.ts                   # Vite configuration
 ```
 
 ---
 
-## Frontend - Demo UI
+## Frontend — Demo UI
 
-### Dostepne strony
+### Available Pages
 
-| Sciezka | Opis |
-|---------|------|
-| `/` | Strona glowna |
-| `/pay` | Demo interfejs platnosci (4 kroki) |
-| `/admin` | Panel administracyjny |
+| Path | Description |
+|------|-------------|
+| `/` | Home page |
+| `/pay` | Payment demo interface (4 steps) |
+| `/admin` | Admin panel |
 
-### Przeplyw platnosci (Demo UI) - 4 kroki
+### Payment Flow (Demo UI) — 4 Steps
 
-1. **Wybor planu**: Wyswietla dostepne plany subskrypcyjne z cenami i funkcjami
-2. **Formularz platnosci**: Wybor sieci, tokenu i wpisanie adresu portfela
-   - Automatyczne sprawdzanie OFAC z debounce 500ms
-   - Ikony statusu: ladowanie (spinner), czysty (zielona tarcza), sankcjonowany (czerwona tarcza)
-   - Blokowanie przycisku "Continue" dla sankcjonowanych adresow
-   - Alert z pelnym komunikatem OFAC dla sankcjonowanych adresow
-3. **Instrukcje platnosci**: QR code z adresem, dokladna kwota, czas wygasniecia
-4. **Status**: Automatyczne odswiezanie co 5 sekund, wyswietlanie hash transakcji po potwierdzeniu
+1. **Plan Selection**: Displays available subscription plans with prices and features
+2. **Payment Form**: Network selection, token selection, and wallet address input
+   - Automatic OFAC check with 500ms debounce
+   - Status icons: loading (spinner), clean (green shield), sanctioned (red shield)
+   - "Continue" button disabled for sanctioned addresses
+   - Full OFAC warning alert for sanctioned addresses
+3. **Payment Instructions**: QR code with address, exact amount, expiration timer
+4. **Status**: Auto-refresh every 5 seconds, transaction hash displayed after confirmation
 
 ---
 
-## Rozwoj i testowanie
+## Development & Testing
 
-### Uruchomienie
+### Running the Project
 
 ```bash
-# Zainstaluj zaleznosci
+# Install dependencies
 npm install
 
-# Uruchom serwer deweloperski (frontend + backend)
+# Start development server (frontend + backend)
 npm run dev
 
-# Zsynchronizuj schemat bazy danych
+# Sync database schema
 npm run db:push
 ```
 
-### Kluczowe pakiety NPM
+### Key NPM Packages
 
-| Pakiet | Wersja | Zastosowanie |
-|--------|--------|--------------|
-| `alchemy-sdk` | - | Monitoring blockchain EVM |
-| `drizzle-orm` | - | ORM bazy danych |
-| `drizzle-kit` | - | Migracje i narzedzia DB |
-| `node-cron` | - | Zadania cykliczne |
-| `fast-xml-parser` | - | Parsowanie XML OFAC |
-| `zod` | - | Walidacja danych |
-| `@tanstack/react-query` | v5 | Zarzadzanie stanem serwera |
-| `qrcode.react` | - | Generowanie QR code |
-| `wouter` | - | Routing React |
+| Package | Purpose |
+|---------|---------|
+| `alchemy-sdk` | EVM blockchain monitoring |
+| `drizzle-orm` | Database ORM |
+| `drizzle-kit` | DB migration tools |
+| `node-cron` | Scheduled jobs |
+| `fast-xml-parser` | OFAC XML parsing |
+| `zod` | Data validation |
+| `@tanstack/react-query` | Server state management (v5) |
+| `qrcode.react` | QR code generation |
+| `wouter` | React routing |
 
 ### Demo UI
 
-Odwiedz `/pay` aby przetestowac caly przeplyw platnosci z wbudowanym interfejsem demonstracyjnym.
+Visit `/pay` to test the complete payment flow with the built-in demo interface.
 
 ---
 
-## Licencja
+## License
 
 MIT
 
